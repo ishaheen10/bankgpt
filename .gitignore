@@ -1,0 +1,56 @@
+# Environment variables
+.env
+
+# Large index files (handled by GitHub Releases)
+gemini_index_metadata/
+
+# Runtime generated files
+enhanced_contexts/
+enhanced_client_contexts/
+
+# Data processing scripts (not needed for deployment)
+Step1DownloadPDFs.py
+Step2ConvertPDFtoMarkdown.py
+Step3ChunkMarkdown.py
+Step4MetaDataTags.py
+Step5CombineMetaData.py
+Step6CreateEmbeddings.py
+Tool1Mistral_OCR.py
+Tool2ValidateProcessing.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.python-version
+
+# Large PDF files
+psx_bank_reports/
+
+# Processed data (can be regenerated)
+output_metadata/
+psx_bank_metadata/
+psx_markdown_clean/
+psx_bank_markdown/
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+
+# Chainlit runtime
+.chainlit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
