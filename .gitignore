@@ -3,6 +3,7 @@
 
 # Large index files (handled by GitHub Releases)
 gemini_index_metadata/
+gemini_index_metadata.tar.gz
 
 # Runtime generated files
 enhanced_contexts/

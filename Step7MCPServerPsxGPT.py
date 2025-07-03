@@ -14,6 +14,8 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 import hashlib
 import time
+import requests
+import tarfile
 
 from dotenv import load_dotenv
 from llama_index.core import StorageContext, load_index_from_storage
@@ -61,6 +63,9 @@ class EnhancedResourceManager:
             log.info("🗂️ Loading vector index from storage...")
             log.info(f"   Index directory: {INDEX_DIR}")
             
+            # Download index if not present
+            await download_index_if_needed()
+            
             if not INDEX_DIR.exists():
                 raise FileNotFoundError(f"Index directory not found: {INDEX_DIR}")
             
@@ -102,6 +107,33 @@ try:
 except Exception as e:
     log.error(f"❌ Failed to load tickers: {e}")
     TICKERS = []
+
+# ─────────────────────────── Index Download Function ────────────────────
+async def download_index_if_needed():
+    """Download index from GitHub Releases if not present"""
+    if INDEX_DIR.exists() and (INDEX_DIR / "default__vector_store.json").exists():
+        log.info("✅ Index already available locally")
+        return True
+    
+    try:
+        url = os.getenv("INDEX_RELEASE_URL")
+        if not url:
+            log.error("❌ INDEX_RELEASE_URL not set")
+            return False
+            
+        log.info("📥 Downloading index from GitHub Releases...")
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
+            tar.extractall(BASE_DIR)
+        
+        log.info("✅ Index download complete")
+        return True
+        
+    except Exception as e:
+        log.error(f"❌ Index download failed: {e}")
+        return False
 
 # ─────────────────────────── Enhanced Core Functions ────────────────────
 def save_context(query: str, nodes: List[NodeWithScore], metadata: Dict) -> str:
@@ -388,6 +420,9 @@ async def psx_health_check() -> Dict[str, Any]:
 if __name__ == "__main__":
     log.info("🚀 Starting Enhanced PSX Financial MCP Server...")
     
+    # Get port from Render environment
+    port = int(os.getenv("PORT", 8000))
+    
     # Use SSE transport for browser/HTTP compatibility
-    # This creates HTTP endpoints that browsers can connect to
-    mcp.run(transport="sse") 
+    # Bind to all interfaces for Render
+    mcp.run(transport="sse", host="0.0.0.0", port=port) 
