@@ -887,8 +887,8 @@ def auth_callback(username: str, password: str) -> Optional[cl.User]:
     return None
 
 @cl.on_chat_start
-def welcome_message():
-    cl.Message(
+async def welcome_message():
+    await cl.Message(
         content=(
             "👋 **Welcome to BankGPT!**\n\n"
             "To get started, please add the MCP server in the MCP Servers panel (top right plug icon).\n\n"
