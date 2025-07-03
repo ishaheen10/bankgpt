@@ -75,7 +75,7 @@ name = "BankGPT by Asfi"
 # default_sidebar_state = "open"
 
 # Description of the assistant. This is used for HTML tags.
-description = "AI-powered financial analysis for Pakistan Stock Exchange. Powered by Asfi's Obsession."
+description = "AI-powered financial analysis for Pakistan Stock Exchange. Powered by AsfiModels."
 
 # Chain of Thought (CoT) display mode. Can be "hidden", "tool_call" or "full".
 cot = "full"
@@ -112,7 +112,7 @@ custom_meta_image_url = "/public/asfi-logo.png"
 # Add a header link for branding if desired
 [[UI.header_links]]
 name = "Brand"
-display_name = "Powered by Asfi's Obsession"
+display_name = "Powered by AsfiModels"
 icon_url = "/public/asfi-logo.png"
 url = "https://www.linkedin.com/in/isfandiyar-shaheen-3a56a92/"
 
