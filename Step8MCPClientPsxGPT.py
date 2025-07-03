@@ -1197,4 +1197,20 @@ async def on_mcp_disconnect(name: str, session):
 if __name__ == "__main__":
     log.info("Starting PSX Financial Client...")
     from chainlit.cli import run_chainlit
-    run_chainlit(__file__) 
+    run_chainlit(__file__)
+
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
+MCP_SERVER_TYPE = os.getenv("MCP_SERVER_TYPE", "sse")  # default to sse
+
+@cl.on_chat_start
+async def auto_connect_mcp():
+    if MCP_SERVER_URL:
+        try:
+            await cl.connect_mcp(
+                name="PSX",
+                url=MCP_SERVER_URL,
+                type=MCP_SERVER_TYPE
+            )
+            await cl.Message(content="✅ Connected to PSX MCP server automatically.").send()
+        except Exception as e:
+            await cl.Message(content=f"❌ Failed to auto-connect to MCP server: {e}").send() 
