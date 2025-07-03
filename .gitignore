@@ -41,7 +41,6 @@ psx_bank_markdown/
 ._*
 
 # Chainlit runtime
-.chainlit/
 
 # IDE
 .vscode/
