@@ -887,79 +887,19 @@ def auth_callback(username: str, password: str) -> Optional[cl.User]:
     return None
 
 @cl.on_chat_start
-async def on_chat_start():
-    # Clear conversation context for new session
-    cl.user_session.set("conversation_context", None)
-    log.info("🔄 Started new chat session - cleared conversation context")
-    
-    welcome = """# 🏦 PSX Financial Assistant (Enhanced)
-
-**AI-Powered Financial Data Analysis for Pakistan Stock Exchange**
-
-## 🚀 **Enhanced Features:**
-- **Intelligent Query Parsing** with Claude 3.5 Haiku
-- **Multi-Query Execution** for comprehensive data retrieval
-- **Automated Q4 Calculation** from annual reports for quarterly analysis
-- **Enhanced Error Handling** with detailed diagnostics
-- **Real-time Processing Statistics** and success rates
-- **Improved Logging** for better debugging and monitoring
-- **🆕 Conversation Context** - Follow-up queries now understand previous context!
-
-## 🎯 **What you can ask:**
-
-**📊 Get Financial Statements:**
-- "Show me HBL's 2024 balance sheet"
-- "Get UBL quarterly profit and loss for Q2 2024"
-- "Make me a table showing quarterly financial statements for JS Bank and Meezan in 2024" ⭐
-
-**📈 Financial Analysis:**
-- "Analyze Meezan Bank's performance in 2024"
-- "What are the key trends in JS Bank's profitability?"
-
-**⚖️ Compare Companies:**
-- "Compare MCB and NBP balance sheets side by side"
-- "Show me Meezan Bank and Bank Al Falah's profit and loss account unconsolidated for 2024"
-
-**🆕 Follow-up Queries (NEW!):**
-- After analyzing companies: "Show me their sector exposure"
-- After financial statements: "What about their quarterly data?"
-- After comparisons: "I want to see exposure by sector and industry"
-
-## 🔢 **NEW: Intelligent Q4 Calculation**
-When you request quarterly data, the system automatically:
-- **Retrieves Q1, Q2, Q3** quarterly reports  
-- **Fetches annual reports** for the same companies
-- **Calculates Q4 = Annual - Q3** (since Q3 is 9-month cumulative data)
-- **Includes Q4 columns** in tables with calculation notes
-
-This solves the industry challenge where companies file annual reports but don't provide separate Q4 quarterly data!
-
-## 💬 **NEW: Conversation Context**
-The system now remembers your previous queries and can handle follow-up questions:
-- **Context Awareness**: Understands "their", "them", "these companies" references
-- **Smart Inference**: Automatically applies previous companies to new queries
-- **Consistency**: Maintains analysis scope across related queries
-- **Natural Flow**: Ask follow-up questions without repeating company names
-
-## 🔧 **System Improvements:**
-- **Enhanced error recovery** with multiple query attempts
-- **Detailed query statistics** showing success rates
-- **Better context saving** for debugging and analysis
-- **Improved logging** with processing time tracking
-- **Robust timeout handling** for reliable performance
-- **Conversation memory** for natural follow-up queries
-
-## ℹ️ **Technical Notes:**
-- Framework async warnings (if any) don't affect functionality
-- Context files are saved for both server and client debugging
-- All queries work despite any background warnings
-- Conversation context is automatically managed
-
-The system uses **Claude 3.5 Haiku** for intelligent query parsing and generates optimized database queries automatically with comprehensive error handling and conversation awareness.
-
-**What would you like to analyze today?**
-"""
-    await cl.Message(content=welcome).send()
+def welcome_message():
+    cl.Message(
+        content=(
+            "👋 **Welcome to BankGPT!**\n\n"
+            "To get started, please add the MCP server in the MCP Servers panel (top right plug icon).\n\n"
+            "**Paste this URL:**\n"
+            "`https://bankgptserver.onrender.com/sse`\n\n"
+            "1. Click the plug icon (MCP Servers)\n"
+            "2. Click 'Connect an MCP'\n"
+            "3. Paste the URL above, set type to 'sse', and click Confirm.\n\n"
+            "You only need to do this once per browser session."
+        )
+    ).send()
 
 @cl.on_message
 async def on_message(message: cl.Message):
@@ -1197,20 +1137,4 @@ async def on_mcp_disconnect(name: str, session):
 if __name__ == "__main__":
     log.info("Starting PSX Financial Client...")
     from chainlit.cli import run_chainlit
-    run_chainlit(__file__)
-
-MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
-MCP_SERVER_TYPE = os.getenv("MCP_SERVER_TYPE", "sse")  # default to sse
-
-@cl.on_chat_start
-async def auto_connect_mcp():
-    if MCP_SERVER_URL:
-        try:
-            await cl.connect_mcp(
-                name="PSX",
-                url=MCP_SERVER_URL,
-                type=MCP_SERVER_TYPE
-            )
-            await cl.Message(content="✅ Connected to PSX MCP server automatically.").send()
-        except Exception as e:
-            await cl.Message(content=f"❌ Failed to auto-connect to MCP server: {e}").send() 
+    run_chainlit(__file__) 
