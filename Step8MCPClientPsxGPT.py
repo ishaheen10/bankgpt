@@ -891,13 +891,11 @@ async def welcome_message():
     await cl.Message(
         content=(
             "👋 **Welcome to BankGPT!**\n\n"
-            "To get started, please add the MCP server in the MCP Servers panel (top right plug icon).\n\n"
-            "**Paste this URL:**\n"
-            "`https://bankgptserver.onrender.com/sse`\n\n"
-            "1. Click the plug icon (MCP Servers)\n"
-            "2. Click 'Connect an MCP'\n"
-            "3. Paste the URL above, set type to 'sse', and click Confirm.\n\n"
-            "You only need to do this once per browser session."
+            "To get started, first copy this URL: `https://bankgptserver.onrender.com/sse`\n\n"
+            "1. Click the plug icon 🔌 in the chatbox (MCP Servers)\n"
+            "2. Under **Type*** click the dropdown and select **sse**\n"
+            "3. Paste the URL above and set **Name** as **BankGPT**\n"
+            "4. Click **Confirm** to connect\n\n"
         )
     ).send()
 
