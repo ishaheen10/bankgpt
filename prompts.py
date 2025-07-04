@@ -110,6 +110,35 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 **Final Report Structure:**
 [Present the complete report with all sections]"""
 
+    REPORT_STRUCTURE_TEMPLATE = """REPORT STRUCTURE REQUIREMENTS:
+
+After the Executive Summary, describe how you will structure the report:
+
+**This report is divided into:**
+
+**Section 1: [Title based on your analysis focus]**
+- [Brief description of what this section will cover]
+
+**Section 2: [Title based on your analysis focus]**
+- [Brief description of what this section will cover]
+
+**Section 3: [Title based on your analysis focus]**
+- [Brief description of what this section will cover]
+
+[Continue with additional sections as needed based on the analysis requirements]
+
+**Key areas to consider including in your sections:**
+- Financial performance metrics and trends
+- Balance sheet health and strength assessment
+- Sector exposure and geographic breakdown
+- One-time costs and exceptional items
+- Banking ratios and efficiency metrics
+- Risk assessment and capital adequacy
+- Comparative analysis (if multiple companies)
+- Investment insights and strategic implications
+
+Let the analysis requirements guide your section structure, but always provide this upfront overview."""
+
     ENHANCED_REASONING_FRAMEWORK = """ADVANCED REASONING APPROACH - Use this for complex analysis:
 
 **REASONING PROCESS:**
@@ -135,6 +164,8 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
 {cls.RATIO_ANALYSIS_GUIDANCE}
 
+{cls.REPORT_STRUCTURE_TEMPLATE}
+
 {cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
@@ -142,6 +173,8 @@ ONLY include banking ratios and metrics that are explicitly available in the ret
     OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
 {cls.RATIO_ANALYSIS_GUIDANCE}
+
+{cls.REPORT_STRUCTURE_TEMPLATE}
 
 {cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
