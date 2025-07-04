@@ -41,9 +41,29 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
     OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
 
-    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
+    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
+RATIO ANALYSIS REQUIREMENTS:
+- When ratios are explicitly requested in the query, calculate ALL relevant ratios using data from the chunks
+- For operating cost ratios: Calculate Cost/Income, Operating Efficiency, Expense Ratios
+- For profitability ratios: Calculate ROE, ROA, Net Margin, Gross Margin (if data available)
+- For liquidity ratios: Calculate Current Ratio, Quick Ratio (if data available)
+- For leverage ratios: Calculate Debt/Equity, Capital Adequacy (if data available)
+- Always show the calculation method: "Ratio = Numerator / Denominator"
+
+ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
+
+    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
+
+RATIO ANALYSIS REQUIREMENTS:
+- When ratios are explicitly requested in the query, calculate ALL relevant ratios using data from the chunks
+- For operating cost ratios: Calculate Cost/Income, Operating Efficiency, Expense Ratios
+- For profitability ratios: Calculate ROE, ROA, Net Margin, Gross Margin (if data available)
+- For liquidity ratios: Calculate Current Ratio, Quick Ratio (if data available)
+- For leverage ratios: Calculate Debt/Equity, Capital Adequacy (if data available)
+- Always show the calculation method: "Ratio = Numerator / Denominator"
+
+ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
     QUARTERLY_DATA_PRIORITY = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - PRIORITIZE quarterly chunks over annual chunks when available
@@ -342,7 +362,7 @@ Use the templates below to create compelling tables that show:
 
 ## {', '.join(companies_set)} - Quarterly Performance Analysis
 **Quarterly Statement Analysis**
-*(PKR in Millions)*
+*(Currency units as reported in source documents)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
@@ -374,7 +394,7 @@ Use BANKING_TABLE_EXAMPLES and COMPARATIVE_ANALYSIS_TEMPLATES to create professi
 
 ## {', '.join(companies_set)} - Comprehensive Financial Analysis
 **Statement Analysis for the periods shown in the data**
-*(PKR in Millions)*
+*(Currency units as reported in source documents)*
 
 {cls.BANKING_TABLE_EXAMPLES}
 
@@ -412,7 +432,7 @@ Use QUARTERLY_TREND_TEMPLATES and BANKING_TABLE_EXAMPLES for comprehensive analy
 
 ## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive
 **Quarterly Statement of Financial Position**
-*(PKR in Millions)*
+*(Currency units as reported in source documents)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
@@ -533,6 +553,14 @@ Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment ban
 - Financial performance and operational efficiency comparison
 - Risk profile and capital strength assessment
 - Strategic outlook and investment recommendations
+
+## Ratio Calculation Requirements
+When ratios are explicitly requested in the query:
+- Calculate ALL relevant ratios using data from the provided chunks
+- Show calculation method: "Ratio = Numerator / Denominator"
+- Include both absolute values and percentage changes
+- Compare ratios across companies and time periods
+- Highlight significant differences and trends
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
