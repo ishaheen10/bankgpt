@@ -21,12 +21,13 @@ Respond to their query while keeping in mind:"""
 - Output clean markdown tables directly (NO code blocks or ``` markers)
 - Use proper markdown table syntax with | separators
 - Format numbers with commas for readability (e.g., 1,234,567)
-- Present all financial data using the EXACT currency units as shown in the source documents
+- Present all financial data in PKR MM (millions) unless it's a ratio or percentage
 - Always include currency unit and statement type headers like a financial analyst:
   **Balance Sheet as at [Date]**
-  *(Use the exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
-- Keep currency units consistent with what appears in the retrieved chunks
-- PRIORITIZE the currency format that appears in the source documents over generic labels"""
+  *(All amounts in PKR MM unless otherwise specified)*
+- Convert all financial figures to PKR MM format for consistency
+- Ratios and percentages should remain as calculated (no unit conversion needed)
+- Use PKR MM as the standard unit for all monetary values"""
 
     DATA_SOURCE_INSTRUCTIONS = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - Use the filing_period data from the chunks as provided
@@ -42,12 +43,11 @@ CRITICAL: CONTEXT-GROUNDED ANALYSIS ONLY
 - All analysis must be traceable back to specific information in the retrieved chunks
 
 CURRENCY FORMAT REQUIREMENTS:
-- Use the EXACT currency format that appears in the source documents (PKR 000s, PKR MM, PKR Millions, etc.)
-- Do NOT use generic labels like "Currency as presented in source"
-- Look for specific currency indicators in the source data and use those exact formats
-- If source shows "PKR 000s", use "PKR 000s" in your headers
-- If source shows "PKR MM", use "PKR MM" in your headers
-- If source shows "PKR Millions", use "PKR Millions" in your headers"""
+- Convert all financial figures to PKR MM (millions) for consistency
+- Extract the raw numbers from source documents and convert to PKR MM format
+- Use PKR MM as the standard unit for all monetary values in tables and analysis
+- Ratios and percentages should remain as calculated (no unit conversion needed)
+- Always specify "PKR MM" in table headers and descriptions"""
 
     CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
 Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
@@ -499,7 +499,7 @@ Use the templates below to create compelling tables that show:
 
 ## {', '.join(companies_set)} - Quarterly Performance Analysis ({scope_display})
 **Quarterly Statement Analysis**
-*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
+*(All amounts in PKR MM unless otherwise specified)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
@@ -535,7 +535,7 @@ Use BANKING_TABLE_EXAMPLES and COMPARATIVE_ANALYSIS_TEMPLATES to create professi
 
 ## {', '.join(companies_set)} - Comprehensive Financial Analysis ({scope_display})
 **Statement Analysis for the periods shown in the data**
-*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
+*(All amounts in PKR MM unless otherwise specified)*
 
 {cls.BANKING_TABLE_EXAMPLES}
 
@@ -577,7 +577,7 @@ Use QUARTERLY_TREND_TEMPLATES and BANKING_TABLE_EXAMPLES for comprehensive analy
 
 ## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive ({scope_display})
 **Quarterly Statement of Financial Position**
-*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
+*(All amounts in PKR MM unless otherwise specified)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
