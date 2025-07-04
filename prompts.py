@@ -13,6 +13,10 @@ class PromptLibrary:
     # COMMON INSTRUCTION BLOCKS - Reusable components
     # ═══════════════════════════════════════════════════════════════════════
     
+    EQUITY_RESEARCH_ANALYST_FRAMING = """You are a top tier equity research analyst focused on analyzing banks. You have a deep expertise in extracting meaningful ratios and benchmarks from data. Your client sent you this question: {query}
+
+Respond to their query while keeping in mind:"""
+
     FORMATTING_REQUIREMENTS = """CRITICAL FORMATTING REQUIREMENTS:
 - Output clean markdown tables directly (NO code blocks or ``` markers)
 - Use proper markdown table syntax with | separators
@@ -64,15 +68,82 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
     OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
 
+    CHAIN_OF_THOUGHT_INSTRUCTIONS = """CRITICAL: Follow this structured thinking process step-by-step. Show your reasoning explicitly:
+
+## STEP 1: CONTEXT ANALYSIS & REASONING
+**Let me analyze the provided financial data context:**
+
+**Companies Identified:** [List companies found in context]
+**Time Periods Available:** [List periods found in context]
+**Statement Types:** [List statement types found in context]
+**Currency Format:** [Note the currency format used]
+**Data Completeness Assessment:** [Note what data is complete vs. missing]
+**Calculable Ratios:** [List ratios that can be calculated with available data]
+
+**Key Observations:**
+- [Observation 1 about data quality/availability]
+- [Observation 2 about trends/patterns]
+- [Observation 3 about limitations]
+
+## STEP 2: REPORT STRUCTURE PLANNING
+**Based on my analysis, I will structure the report as follows:**
+
+**Executive Summary:** [Brief overview of key findings]
+**Financial Performance Overview:** [Main metrics and trends]
+**Ratio Analysis:** [If applicable - which ratios to include]
+**Comparative Analysis:** [If multiple companies - comparison approach]
+**Investment Insights:** [Key takeaways for investors]
+**Risk Assessment:** [Risk factors and considerations]
+
+## STEP 3: SYSTEMATIC SECTION DEVELOPMENT
+**Now I will develop each section systematically:**
+
+[Proceed to write each section following the planned structure]
+
+## STEP 4: QUALITY VERIFICATION
+**Before finalizing, I verify:**
+- ✅ All data sourced from provided context only
+- ✅ Proper currency formatting maintained
+- ✅ Ratios calculated correctly
+- ✅ Professional investment banking tone achieved
+
+**Final Report Structure:**
+[Present the complete report with all sections]"""
+
+    ENHANCED_REASONING_FRAMEWORK = """ADVANCED REASONING APPROACH - Use this for complex analysis:
+
+**REASONING PROCESS:**
+1. **Data Comprehension:** First, thoroughly understand what financial data is available
+2. **Pattern Recognition:** Identify trends, anomalies, and relationships in the data
+3. **Hypothesis Formation:** Develop hypotheses about performance drivers and risks
+4. **Evidence Evaluation:** Test hypotheses against the available data
+5. **Conclusion Drawing:** Form evidence-based conclusions and recommendations
+
+**ANALYTICAL THINKING:**
+- **Comparative Analysis:** When comparing companies, identify key differentiators
+- **Trend Analysis:** Look for patterns over time periods
+- **Risk Assessment:** Evaluate both quantitative and qualitative risk factors
+- **Strategic Implications:** Consider what the data means for investment decisions
+
+**QUALITY CHECKS:**
+- **Data Integrity:** Ensure all numbers are accurately extracted from context
+- **Logical Consistency:** Verify that conclusions follow from the data
+- **Professional Standards:** Maintain investment banking level analysis quality
+- **Context Grounding:** All insights must be traceable to provided data"""
+
     OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
 {cls.RATIO_ANALYSIS_GUIDANCE}
+
+{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
     OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
 {cls.RATIO_ANALYSIS_GUIDANCE}
+
+{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
@@ -415,7 +486,7 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
             if is_quarterly_in_query:
                 # This is a multi-company quarterly request
                 return f"""
-You are generating a multi-company quarterly financial statement comparison for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -445,11 +516,15 @@ CRITICAL: Use the quarterly data chunks (those with Q1, Q2, Q3 periods) rather t
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_STATEMENT}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
             else:
                 # Regular multi-company annual comparison
                 return f"""
-You are generating a side-by-side financial statement comparison for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -480,12 +555,16 @@ IMPORTANT:
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_STATEMENT}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
         
         # Quarterly comparison for single company
         elif is_quarterly_comparison and not is_multi_company:
             return f"""
-You are generating quarterly financial statement data for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -508,12 +587,16 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 {cls.OUTPUT_FORMAT_STATEMENT}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
         
         # Multi-company quarterly comparison
         elif is_multi_company:
             return f"""
-You are generating financial statement data for multiple companies: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -534,12 +617,16 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 {cls.OUTPUT_FORMAT_STATEMENT}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
         
         # Single company statement
         else:
             return f"""
-You are generating financial statement data for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -551,6 +638,10 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 Present the financial statement data in clean markdown table format. NO code blocks.
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
 
     @classmethod
@@ -573,7 +664,7 @@ Present the financial statement data in clean markdown table format. NO code blo
         
         if is_quarterly_comparison:
             return f"""
-You are creating a quarterly comparative analysis for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 - Show trends and growth patterns
@@ -581,6 +672,8 @@ You are creating a quarterly comparative analysis for: {query}
 {q4_instructions}
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
+
+{cls.ENHANCED_REASONING_FRAMEWORK}
 
 STRUCTURE - QUARTERLY COMPARATIVE ANALYSIS:
 Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
@@ -601,10 +694,14 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
         elif is_multi_company:
             return f"""
-You are creating a comprehensive multi-company analysis for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 Companies involved: {', '.join(companies_set)}
 
@@ -613,6 +710,8 @@ Companies involved: {', '.join(companies_set)}
 {q4_instructions}
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
+
+{cls.ENHANCED_REASONING_FRAMEWORK}
 
 STRUCTURE - COMPREHENSIVE MULTI-COMPANY ANALYSIS:
 Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
@@ -637,10 +736,14 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
         else:
             return f"""
-You are analyzing financial data for: {query}
+{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -664,6 +767,10 @@ At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
+
+and using ONLY the following context which was retrieved from financial reports:
+
+[chunks]
 """
 
 

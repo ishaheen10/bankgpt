@@ -791,7 +791,7 @@ async def execute_financial_query(query_plan: QueryPlan, original_query: str) ->
     return result_data
 
 async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, companies: List[str]):
-    """Stream formatted response using centralized prompts library"""
+    """Stream formatted response using centralized prompts library with chain of thought"""
     if not nodes:
         yield "No relevant financial data found for your query."
         return
@@ -860,14 +860,48 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         chunk_id = node.get("metadata", {}).get("chunk_number", f"chunk_{i+1}")
         context_str += f"\n\n--- Chunk #{chunk_id} ---\n{node.get('text', '')}"
     
-    full_prompt = f"{prompt}\n\nFinancial Data Context:\n{context_str}"
+    # Replace the [chunks] placeholder with actual context
+    full_prompt = prompt.replace("[chunks]", context_str)
     
-    # Stream response using LLM directly
+    # Stream response using LLM directly with chain of thought support
     try:
         stream = await streaming_llm.astream_complete(full_prompt)
+        
+        # Track chain of thought sections for proper streaming
+        current_section = "reasoning"
+        section_buffer = ""
+        in_reasoning_section = False
+        
         async for chunk in stream:
             if chunk.delta:
-                yield chunk.delta
+                delta_text = chunk.delta
+                section_buffer += delta_text
+                
+                # Detect chain of thought sections
+                if "## STEP 1: CONTEXT ANALYSIS" in section_buffer and not in_reasoning_section:
+                    in_reasoning_section = True
+                    current_section = "reasoning"
+                    # Yield the reasoning section start
+                    yield delta_text
+                elif "## STEP 2: REPORT STRUCTURE" in section_buffer and current_section == "reasoning":
+                    current_section = "planning"
+                    yield delta_text
+                elif "## STEP 3: SYSTEMATIC SECTION" in section_buffer and current_section == "planning":
+                    current_section = "execution"
+                    yield delta_text
+                elif "## STEP 4: QUALITY VERIFICATION" in section_buffer and current_section == "execution":
+                    current_section = "verification"
+                    yield delta_text
+                elif "**Final Report Structure:**" in section_buffer and current_section == "verification":
+                    current_section = "final_report"
+                    yield delta_text
+                else:
+                    # Regular streaming for all other content
+                    yield delta_text
+                
+                # Keep buffer manageable
+                if len(section_buffer) > 1000:
+                    section_buffer = section_buffer[-500:]
         
     except Exception as e:
         log.error(f"Streaming error: {e}")
@@ -979,18 +1013,21 @@ async def on_message(message: cl.Message):
         
         log.info(f"✅ Query execution completed: {result['total_nodes']} nodes from {query_stats.get('successful_queries', 0)} queries")
         
-        # Step 3: Stream the analysis (enhanced logging)
-        step3 = cl.Message(content="📊 **Step 3:** Generating financial analysis...")
+        # Step 3: Stream the analysis with chain of thought (enhanced logging)
+        step3 = cl.Message(content="📊 **Step 3:** Generating financial analysis with chain of thought...")
         await step3.send()
         
-        # Create streaming response message
+        # Create streaming response message with chain of thought support
         response_msg = cl.Message(content="")
         await response_msg.send()
         
-        log.info("🎨 Starting response generation and streaming...")
+        log.info("🎨 Starting response generation and streaming with chain of thought...")
         
-        # Stream the formatted response (proven working approach)
+        # Stream the formatted response with chain of thought tracking
         complete_response = ""
+        reasoning_sections = []
+        current_reasoning = ""
+        
         async for chunk in stream_formatted_response(
             result["original_query"], 
             result["nodes"], 
@@ -998,7 +1035,62 @@ async def on_message(message: cl.Message):
             result["companies"]
         ):
             complete_response += chunk
+            current_reasoning += chunk
+            
+            # Track reasoning sections for chain of thought display
+            if "## STEP 1: CONTEXT ANALYSIS" in current_reasoning:
+                if "## STEP 2: REPORT STRUCTURE" not in current_reasoning:
+                    # Still in STEP 1
+                    pass
+                else:
+                    # Completed STEP 1, store it
+                    step1_end = current_reasoning.find("## STEP 2: REPORT STRUCTURE")
+                    step1_content = current_reasoning[:step1_end].strip()
+                    if step1_content and step1_content not in reasoning_sections:
+                        reasoning_sections.append(("Context Analysis", step1_content))
+            
+            elif "## STEP 2: REPORT STRUCTURE" in current_reasoning:
+                if "## STEP 3: SYSTEMATIC SECTION" not in current_reasoning:
+                    # Still in STEP 2
+                    pass
+                else:
+                    # Completed STEP 2, store it
+                    step2_start = current_reasoning.find("## STEP 2: REPORT STRUCTURE")
+                    step2_end = current_reasoning.find("## STEP 3: SYSTEMATIC SECTION")
+                    step2_content = current_reasoning[step2_start:step2_end].strip()
+                    if step2_content and step2_content not in reasoning_sections:
+                        reasoning_sections.append(("Report Planning", step2_content))
+            
+            elif "## STEP 3: SYSTEMATIC SECTION" in current_reasoning:
+                if "## STEP 4: QUALITY VERIFICATION" not in current_reasoning:
+                    # Still in STEP 3
+                    pass
+                else:
+                    # Completed STEP 3, store it
+                    step3_start = current_reasoning.find("## STEP 3: SYSTEMATIC SECTION")
+                    step3_end = current_reasoning.find("## STEP 4: QUALITY VERIFICATION")
+                    step3_content = current_reasoning[step3_start:step3_end].strip()
+                    if step3_content and step3_content not in reasoning_sections:
+                        reasoning_sections.append(("Section Development", step3_content))
+            
+            elif "## STEP 4: QUALITY VERIFICATION" in current_reasoning:
+                if "**Final Report Structure:**" not in current_reasoning:
+                    # Still in STEP 4
+                    pass
+                else:
+                    # Completed STEP 4, store it
+                    step4_start = current_reasoning.find("## STEP 4: QUALITY VERIFICATION")
+                    step4_end = current_reasoning.find("**Final Report Structure:**")
+                    step4_content = current_reasoning[step4_start:step4_end].strip()
+                    if step4_content and step4_content not in reasoning_sections:
+                        reasoning_sections.append(("Quality Verification", step4_content))
+            
+            # Stream the token
             await response_msg.stream_token(chunk)
+            
+            # Keep current_reasoning manageable
+            if len(current_reasoning) > 2000:
+                current_reasoning = current_reasoning[-1000:]
         
         # Enhanced step 3 completion
         processing_time = (datetime.now() - start_time).total_seconds()
@@ -1025,6 +1117,12 @@ async def on_message(message: cl.Message):
         completion_summary += f"\n• **Intent:** {result['intent']}"
         completion_summary += f"\n• **Processing Time:** {processing_time:.1f}s"
         completion_summary += f"\n• **Query Success Rate:** {success_rate:.0f}%"
+        
+        # Add chain of thought summary if reasoning sections were captured
+        if reasoning_sections:
+            completion_summary += f"\n• **Chain of Thought Steps:** {len(reasoning_sections)} reasoning phases completed"
+            for step_name, _ in reasoning_sections:
+                completion_summary += f"\n  - {step_name}"
         
         if context_file:
             completion_summary += f"\n• **Debug Context:** `{Path(context_file).name}`"
