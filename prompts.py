@@ -41,7 +41,7 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
     OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
 
-    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
+    OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
 RATIO ANALYSIS REQUIREMENTS:
 - When ratios are explicitly requested in the query, calculate ALL relevant ratios using data from the chunks
@@ -488,9 +488,9 @@ Present the financial statement data in clean markdown table format. NO code blo
 """
 
     @classmethod
-    def get_comparison_prompt(cls, query: str, companies: List[str], is_quarterly_comparison: bool, 
-                            needs_q4_calculation: bool) -> str:
-        """Generate comparison analysis prompt"""
+    def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
+                          is_quarterly_comparison: bool, needs_q4_calculation: bool) -> str:
+        """Generate comprehensive analysis prompt for all non-statement requests"""
         
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
         companies_set = set(companies)
@@ -524,11 +524,11 @@ Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-{cls.OUTPUT_FORMAT_COMPARISON}
+{cls.OUTPUT_FORMAT_ANALYSIS}
 """
-        else:
+        elif is_multi_company:
             return f"""
-You are creating a side-by-side comparative analysis for: {query}
+You are creating a comprehensive multi-company analysis for: {query}
 
 Companies involved: {', '.join(companies_set)}
 
@@ -538,10 +538,10 @@ Companies involved: {', '.join(companies_set)}
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE - SIDE-BY-SIDE COMPETITIVE ANALYSIS:
+STRUCTURE - COMPREHENSIVE MULTI-COMPANY ANALYSIS:
 Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
 
-## Side-by-Side Financial Comparison
+## Multi-Company Financial Analysis
 **{', '.join(companies_set)} - Comprehensive Performance Analysis**
 
 {cls.COMPARATIVE_ANALYSIS_TEMPLATES}
@@ -565,48 +565,7 @@ When ratios are explicitly requested in the query:
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-{cls.OUTPUT_FORMAT_COMPARISON}
-"""
-
-    @classmethod
-    def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
-                          is_quarterly_comparison: bool, needs_q4_calculation: bool) -> str:
-        """Generate general analysis prompt"""
-        
-        q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
-        
-        if is_multi_company:
-            return f"""
-You are analyzing financial data for multiple companies: {query}
-
-Companies: {', '.join(set(companies))}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
-
-{cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}
-"""
-        elif is_quarterly_comparison:
-            return f"""
-You are analyzing quarterly financial performance for: {query}
-
-{cls.FORMATTING_REQUIREMENTS}
-- Show trends and growth patterns
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
-
-Present quarterly analysis with data tables in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_ANALYSIS}
 """
         else:
             return f"""
@@ -618,11 +577,25 @@ You are analyzing financial data for: {query}
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
+STRUCTURE - COMPREHENSIVE FINANCIAL ANALYSIS:
+Use BANKING_TABLE_EXAMPLES for professional analysis:
+
+## Financial Analysis
+
+{cls.BANKING_TABLE_EXAMPLES}
+
+## Investment Banking Insights
+- Financial performance drivers and trends
+- Operational efficiency and risk assessment
+- Strategic implications and outlook
+
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present financial analysis with supporting data in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_ANALYSIS}
 """
+
+
 
     # ═══════════════════════════════════════════════════════════════════════
     # QUARTERLY ENHANCEMENT INSTRUCTIONS - For Query Planning
@@ -652,21 +625,22 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
             companies: List of company tickers
             is_multi_company: Whether multiple companies are involved
             is_quarterly_comparison: Whether quarterly data is requested
-            is_side_by_side: Whether side-by-side comparison is requested
+            is_side_by_side: Whether this is a statement request (simplified logic)
             needs_q4_calculation: Whether Q4 calculation is needed
         """
         
-        # Override intent for side-by-side requests
-        if intent == "statement" or (is_side_by_side and is_multi_company):
+        # Simplified routing logic: Check if this is a pure statement request
+        is_statement_request = any(stmt_term in query.lower() for stmt_term in [
+            "statement", "balance sheet", "profit and loss", "cash flow", 
+            "income statement", "financial statement", "p&l", "p & l"
+        ])
+        
+        if is_statement_request:
             return cls.get_statement_prompt(query, companies, is_multi_company, 
                                           is_quarterly_comparison, is_side_by_side, 
                                           needs_q4_calculation)
-        
-        elif intent == "comparison" or is_side_by_side:
-            return cls.get_comparison_prompt(query, companies, is_quarterly_comparison, 
-                                           needs_q4_calculation)
-        
-        else:  # intent == "analysis" or default
+        else:
+            # Everything else gets comprehensive analysis (including ratios)
             return cls.get_analysis_prompt(query, companies, is_multi_company, 
                                          is_quarterly_comparison, needs_q4_calculation)
 

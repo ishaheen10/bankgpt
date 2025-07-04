@@ -825,8 +825,15 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
     is_multi_company = len(companies_set) > 1
     user_query_lower = query.lower()
     is_quarterly_request = any(q_term in user_query_lower for q_term in ["quarterly", "quarter", "q1", "q2", "q3", "q4"])
-    is_quarterly_comparison = is_quarterly_request and any(["Q1" in str(p) or "Q2" in str(p) or "Q3" in str(p) or "Q4" in str(p) for p in periods])
-    is_side_by_side_request = any(phrase in user_query_lower for phrase in ["side by side", "side-by-side", "compare", "comparison table"])
+    is_quarterly_data = is_quarterly_request and any(["Q1" in str(p) or "Q2" in str(p) or "Q3" in str(p) or "Q4" in str(p) for p in periods])
+    
+    # Simplified logic: is_side_by_side is now only True for statement requests
+    is_statement_request = any(stmt_term in user_query_lower for stmt_term in [
+        "statement", "balance sheet", "profit and loss", "cash flow", 
+        "income statement", "financial statement", "p&l", "p & l"
+    ])
+    is_side_by_side_request = is_statement_request
+    
     needs_q4_calculation = is_quarterly_request and has_annual_data and has_quarterly_data
     
     log.info(f"Response analysis: {len(companies_set)} companies, quarterly: {is_quarterly_request}, Q4_calc: {needs_q4_calculation}")
@@ -837,21 +844,13 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         query=query,
         companies=companies,
         is_multi_company=is_multi_company,
-        is_quarterly_comparison=is_quarterly_comparison,
+        is_quarterly_comparison=is_quarterly_data,
         is_side_by_side=is_side_by_side_request,
         needs_q4_calculation=needs_q4_calculation
     )
     
     # Add debug info about prompt selection
-    prompt_type = "unknown"
-    if is_multi_company and is_quarterly_request:
-        prompt_type = "multi-company-quarterly"
-    elif is_multi_company:
-        prompt_type = "multi-company-annual"
-    elif is_quarterly_request:
-        prompt_type = "single-company-quarterly"
-    else:
-        prompt_type = "single-company-annual"
+    prompt_type = "statement" if is_statement_request else "analysis"
     
     log.info(f"🎨 Using prompt type: {prompt_type} (intent: {intent}, multi: {is_multi_company}, quarterly: {is_quarterly_request})")
     
