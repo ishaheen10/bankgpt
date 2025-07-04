@@ -1,56 +1,42 @@
 """
-PSX Financial Assistant - Prompts Library
-Centralized prompt management for consistent AI interactions
+PSX Financial Assistant - Optimized Prompts Library
+Streamlined prompt management for efficient AI interactions with reduced token usage
 """
 
 from typing import Dict, List, Set
 
 
-class PromptLibrary:
-    """Centralized prompt management for PSX Financial Assistant"""
+class OptimizedPromptLibrary:
+    """Optimized prompt management for PSX Financial Assistant with reduced token usage"""
     
     # ═══════════════════════════════════════════════════════════════════════
-    # COMMON INSTRUCTION BLOCKS - Reusable components
+    # CORE INSTRUCTION BLOCKS - Restored critical guardrails
     # ═══════════════════════════════════════════════════════════════════════
     
-    EQUITY_RESEARCH_ANALYST_FRAMING = """You are a top tier equity research analyst focused on analyzing banks. You have a deep expertise in extracting meaningful ratios and benchmarks from data. Your client sent you this question: {query}
+    EQUITY_RESEARCH_ANALYST_FRAMING = """You are a top tier equity research analyst focused on analyzing banks. Your client asked: {query}
 
-Respond to their query while keeping in mind:"""
+Respond with professional financial analysis:"""
 
     FORMATTING_REQUIREMENTS = """CRITICAL FORMATTING REQUIREMENTS:
 - Output clean markdown tables directly (NO code blocks or ``` markers)
 - Use proper markdown table syntax with | separators
 - Format numbers with commas for readability (e.g., 1,234,567)
 - Present all financial data in PKR MM (millions) unless it's a ratio or percentage
-- Always include currency unit and statement type headers like a financial analyst:
+- Always include currency unit and statement type headers:
   **Balance Sheet as at [Date]**
   *(All amounts in PKR MM unless otherwise specified)*
 - Convert all financial figures to PKR MM format for consistency
-- Ratios and percentages should remain as calculated (no unit conversion needed)
-- Use PKR MM as the standard unit for all monetary values"""
+- Ratios and percentages should remain as calculated (no unit conversion needed)"""
 
-    DATA_SOURCE_INSTRUCTIONS = """IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the filing_period data from the chunks as provided
-- Trust the metadata - filing_period shows what periods are actually available
-- Present the data from the periods that exist in the chunks
-- Use the data from the provided chunks as-is and trust the filing_period metadata
-
-CRITICAL: CONTEXT-GROUNDED ANALYSIS ONLY
+    DATA_SOURCE_INSTRUCTIONS = """CRITICAL: CONTEXT-GROUNDED ANALYSIS ONLY
 - Only use financial figures, ratios, and information explicitly provided in the retrieved chunks
 - If a specific metric, ratio, or data point is not in the chunks, state "Data not available in provided context"
 - Do not calculate or derive ratios unless the underlying data is clearly present in the chunks
 - Do not use industry benchmarks, averages, or external data not provided in the context
 - All analysis must be traceable back to specific information in the retrieved chunks
+- Trust the filing_period metadata from chunks"""
 
-CURRENCY FORMAT REQUIREMENTS:
-- Convert all financial figures to PKR MM (millions) for consistency
-- Extract the raw numbers from source documents and convert to PKR MM format
-- Use PKR MM as the standard unit for all monetary values in tables and analysis
-- Ratios and percentages should remain as calculated (no unit conversion needed)
-- Always specify "PKR MM" in table headers and descriptions"""
-
-    CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
-Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
+    CHUNK_TRACKING_INSTRUCTIONS = """End with: Used Chunks: [list chunk IDs]"""
 
     RATIO_ANALYSIS_GUIDANCE = """BANKING RATIO ANALYSIS GUIDANCE:
 - When ratios are explicitly requested, identify and calculate the most relevant banking ratios based on available data
@@ -64,9 +50,10 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 - Show calculation method: "Ratio = Numerator / Denominator" for each ratio you calculate
 - If certain ratios cannot be calculated due to missing data, focus on what can be meaningfully analyzed
 - Structure your analysis based on what data is actually available rather than following rigid templates
-- Prioritize ratios that are most relevant to the user's specific query focus (e.g., efficiency, profitability, asset quality)"""
+- Prioritize ratios that are most relevant to the user's specific query focus (e.g., efficiency, profitability, asset quality)
+- *Compute a ratio only when **both** numerator and denominator appear in the provided chunks.*"""
 
-    OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
+    OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. NO explanatory text."""
 
     CHAIN_OF_THOUGHT_INSTRUCTIONS = """CRITICAL: Follow this structured thinking process step-by-step. Show your reasoning explicitly:
 
@@ -188,284 +175,165 @@ ONLY include banking ratios and metrics that are explicitly available in the ret
 - If you have both quarterly and annual data, use the quarterly chunks for detailed quarterly breakdown"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # COMPELLING TABLE TEMPLATES - Banking-focused examples
+    # STREAMLINED TABLE TEMPLATES
     # ═══════════════════════════════════════════════════════════════════════
     
-    BANKING_TABLE_EXAMPLES = """
-FLEXIBLE BANKING ANALYSIS TABLES:
+    BANKING_TABLE_EXAMPLES = """TABLE FORMATS:
+**Key Metrics:** | Line Item | Current | Previous | YoY Growth |
+**Ratios:** | Ratio | Current | Previous | Trend | Formula |
+**Comparison:** | Bank | Metric1 | Metric2 | Metric3 |"""
 
-Create tables that effectively present the available data. Use the most appropriate format based on what data you have and what insights it provides. Examples of table structures:
+    QUARTERLY_TREND_TEMPLATES = """QUARTERLY TABLES:
+**Performance:** | Metric | Q1 | Q2 | Q3 | Q4* | Trend | Growth |
+*Q4 = Annual - Q3 where applicable*"""
 
-**Key Financial Metrics:**
-| Line Item | Current | Previous | YoY Growth |
-|-----------|---------|----------|------------|
-| [Use actual line items from your data] | [Value] | [Value] | [%] |
-
-**Performance Ratios:**
-| Ratio | Current | Previous | Trend | Calculation |
-|-------|---------|----------|-------|-------------|
-| [Calculate ratios based on available data] | [Value] | [Value] | [↗/↘] | [Formula] |
-
-**Comparative Analysis:**
-| Bank | [Metric 1] | [Metric 2] | [Metric 3] |
-|------|------------|------------|------------|
-| [Bank A] | [Value] | [Value] | [Value] |
-| [Bank B] | [Value] | [Value] | [Value] |
-
-Focus on presenting the most relevant data in the most effective format. Adapt table structures based on what data is actually available and what insights it provides."""
-
-    QUARTERLY_TREND_TEMPLATES = """
-FLEXIBLE QUARTERLY ANALYSIS:
-
-Create quarterly analysis tables based on the available data. Focus on the most relevant metrics for the specific analysis:
-
-**Quarterly Performance Tracking:**
-| Metric | Q1 | Q2 | Q3 | Q4* | Trend | Growth |
-|--------|----|----|----|----|-------|--------|
-| [Use actual metrics from your data] | [Value] | [Value] | [Value] | [Value] | [↗/↘] | [%] |
-
-*Q4 = Calculated (Annual - Q3) where applicable*
-
-**Seasonal Patterns (if relevant data available):**
-| Business Line | Q1 | Q2 | Q3 | Q4 | Peak Quarter |
-|---------------|----|----|----|----|--------------|
-| [Use actual business lines from your data] | [Value] | [Value] | [Value] | [Value] | [Quarter] |
-
-Focus on presenting the most meaningful quarterly trends based on available data rather than forcing specific metrics."""
-
-    COMPARATIVE_ANALYSIS_TEMPLATES = """
-FLEXIBLE MULTI-BANK COMPETITIVE ANALYSIS:
-
-Create comparative analysis tables based on the available data. Focus on the most relevant metrics for the specific analysis:
-
-**Peer Comparison Matrix:**
-| Bank | [Key Metric 1] | [Key Metric 2] | [Key Metric 3] | [Key Metric 4] |
-|------|----------------|----------------|----------------|----------------|
-| [Bank A] | [Value] | [Value] | [Value] | [Value] |
-| [Bank B] | [Value] | [Value] | [Value] | [Value] |
-
-*Include only metrics where you have complete data for meaningful comparison*
-
-**Performance Ranking:**
-| Metric | Best Performer | 2nd Best | Key Insight |
-|--------|----------------|----------|-------------|
-| [Metric 1] | [Bank] ([Value]) | [Bank] ([Value]) | [Brief insight] |
-| [Metric 2] | [Bank] ([Value]) | [Bank] ([Value]) | [Brief insight] |
-
-Focus on presenting the most meaningful comparisons based on available data rather than forcing specific metrics."""
+    COMPARATIVE_ANALYSIS_TEMPLATES = """COMPARISON TABLES:
+**Peer Matrix:** | Bank | Key Metric1 | Key Metric2 | Key Metric3 |
+**Ranking:** | Metric | Best | 2nd Best | Key Insight |"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # PARSING PROMPTS - For Claude 3.5 Haiku Query Understanding
+    # IMPROVED PARSING PROMPT - Targeted fixes based on test results
     # ═══════════════════════════════════════════════════════════════════════
     
-    PARSING_SYSTEM_PROMPT = """You are a PSX Financial Query Parser for Pakistani Stock Exchange financial data.
+    PARSING_SYSTEM_PROMPT = """You are a PSX Financial Query Parser for Pakistani Stock Exchange data.
 
-CONVERSATION CONTEXT HANDLING:
-- You have access to the full conversation history through the messages array
-- For follow-up queries, look at previous user messages to understand context
-- If user refers to "them", "their", "these companies", etc., identify companies from previous messages
-- Maintain consistency with previous analysis scope (quarterly vs annual, consolidated vs unconsolidated)
-- For ambiguous queries, inherit context from the most recent relevant message
+CONTEXT: Use conversation history for follow-up queries. Resolve "them", "their" references.
 
-CORE PARSING RULES:
-1. **Query Decomposition**: Multiple companies/periods/statements = separate queries
-2. **Period Handling**: Use filing_period in metadata filters with specific format requirements
-3. **Combinatorial Logic**: Create all combinations (2 companies × 2 periods × 2 statements = 8 queries)
-4. **Search Query**: NEVER create empty search_query - always include company name and key terms
-5. **Combined Requests**: For "statement with notes" requests, generate statement queries; note queries will be added automatically
-6. **Context Resolution**: Use previous messages to resolve ambiguous references
-7. **Broad Analysis Expansion**: For broad analysis queries (ratios, performance, analysis), automatically include key statement types
+CORE RULES:
+1. Multiple companies/periods/statements = separate queries
+2. Use filing_period format: Annual ["2024", "2023"], Quarterly ["Q1-2024", "Q1-2023"]
+3. Create all combinations (2 companies × 2 periods × 2 statements = 8 queries)
+4. NEVER empty search_query - include company name and key terms
+5. For "statement with notes" = statement queries + note queries
 
 METADATA SCHEMA:
-- ticker: PSX symbol (e.g., BANK1, BANK2, COMP1, etc.)
+- ticker: PSX symbol (HBL, UBL, etc.)
 - statement_type: profit_and_loss|balance_sheet|cash_flow|changes_in_equity|comprehensive_income
-- financial_statement_scope: consolidated|unconsolidated|none
+- financial_statement_scope: consolidated|unconsolidated|none (default: unconsolidated unless specified)
 - filing_type: quarterly|annual
-- filing_period: Must use specific format based on request:
-  - Annual: ["2024", "2023"] or ["2022", "2021"]
-  - Quarterly: ["Q1-2025", "Q1-2024"], ["Q1-2024", "Q1-2023"], ["Q2-2024", "Q2-2023"], ["Q3-2024", "Q3-2023"], 
-              ["Q1-2022", "Q1-2021"], ["Q2-2022", "Q2-2021"], ["Q3-2022", "Q3-2021"]
-- is_statement: "yes" (for financial statements) OR "no" (for notes)
-- is_note: "no" (for statements) OR "yes" (for notes)
-- note_link: profit_and_loss|balance_sheet|cash_flow|changes_in_equity|comprehensive_income (ONLY when is_note="yes", NEVER for statements)
+- filing_period: Use exact format based on request
+- is_statement: "yes" (statements) OR "no" (notes)
+- is_note: "no" (statements) OR "yes" (notes)
+- note_link: statement_type (ONLY when is_note="yes")
 
-METADATA FILTER PRIORITIES (CRITICAL):
-- For "statements/financial statements" → ALWAYS use is_statement = "yes", is_note = "no"
-- For "notes/note breakdown" → ALWAYS use is_statement = "no", is_note = "yes", note_link = [corresponding statement type]
-- For analytical/exposure queries (NOT statements, NOT notes) → Leave is_statement and is_note blank, only set ticker and filing_period
-- For "consolidated/unconsolidated" → Use financial_statement_scope = "consolidated"/"unconsolidated"
-- For statement types → Use statement_type = "balance_sheet"/"profit_and_loss"/etc.
-- For filing periods → Use filing_period with exact format: if user asks for 2024 annual → ["2024", "2023"], if Q1-2024 → ["Q1-2024", "Q1-2023"], if Q1-2025 → ["Q1-2025", "Q1-2024"]
-- For "statements/financial statements" and "notes/note breakdown", is_statement and is_note cannot both be "yes"
+FILTER PRIORITIES:
+- Statements → is_statement="yes", is_note="no"
+- Notes → is_statement="no", is_note="yes", note_link=statement_type
+- Analysis queries → Leave is_statement/is_note blank, set ticker/filing_period
+- Consolidated/Unconsolidated → financial_statement_scope (default: unconsolidated)
+- Statement types → statement_type
+- Periods → filing_period with exact format
 
-INTENT TYPES:
-- "statement": Raw financial data requests (PRIORITY when statement types mentioned) 
-- "analysis": Insights and trends requests, multi-entity/multi-company queries, or when "research" keyword appears, or fallback when not statement
+INTENT CLASSIFICATION RULES (IMPROVED):
+- "statement": ONLY single company, single statement, no analysis keywords
+- "analysis": Multiple companies OR multiple statements OR analysis keywords OR "compare" OR "performance" OR "ratios"
+- FORCE "analysis" if: len(companies) > 1 OR len(statements) > 1 OR analysis_keywords_present
 
-INTENT PRIORITY RULES:
-- If query mentions specific statements (balance sheet, profit and loss, cash flow) → Use "statement" intent unless explicitly asking for analysis
-- If query mentions more than one ticker/company → Use "analysis" intent
-- If query contains "research" keyword → Use "analysis" intent
-- If intent doesn't fall into statement → Use "analysis" intent
+ANALYSIS KEYWORDS: ratios, performance, financial health, KPIs, metrics, analysis, compare, how they did, research, comprehensive, full analysis
 
-BROAD ANALYSIS QUERY EXPANSION RULES:
-- For broad analysis queries (ratios, performance, financial health, comparison), automatically include key statement types
-- Key statement types for comprehensive analysis: balance_sheet, profit_and_loss, cash_flow
-- For ratio analysis: Include balance sheet (asset/liability ratios), profit & loss (profitability ratios), and cash flow (liquidity ratios)
-- For performance analysis: Include profit & loss (income/expense), balance sheet (asset utilization), and cash flow (cash generation)
-- For financial health: Include balance sheet (solvency), profit & loss (profitability), and cash flow (liquidity)
-- For comprehensive analysis: Also include sector exposure data
-- For multi-company comparisons: Generate separate queries for each company with each statement type and exposure data
+BROAD ANALYSIS EXPANSION (IMPROVED):
+- For ratios, performance, financial health → Include balance_sheet, profit_and_loss, cash_flow + exposure queries
+- Multi-company → Separate queries per company per statement type + exposure queries
+- Notes requests → Generate both statement and note queries
 
-BROAD ANALYSIS TRIGGER KEYWORDS:
-- "ratios", "ratio", "performance", "financial health", "financial performance"
-- "key performance indicators", "KPIs", "metrics", "analysis", "compare"
-- "how they did", "performance analysis", "financial analysis"
-- "set of ratios", "financial ratios", "banking ratios"
-- "comprehensive analysis", "full analysis", "complete analysis"
+NOTES HANDLING (NEW):
+- When "notes" keyword detected → Generate statement queries + note queries
+- Note queries: is_note="yes", note_link=corresponding_statement_type
+- Example: "P&L with notes" → 2 queries (P&L statement + P&L notes)
 
-SEARCH QUERY CONSTRUCTION:
-- Always include company name in search_query
-- Add statement type keywords (profit, loss, balance, sheet, cash, flow)
-- For analytical queries: Include analysis keywords (exposure, sector, geographic, lending, risk)
-- Include filing period (2024, Q1, quarterly, annual)
-- Example: "[COMPANY] [STATEMENT_TYPE] [PERIOD]" OR "[COMPANY] [ANALYSIS_TYPE] [PERIOD]" NOT empty string
+PERIOD FORMAT STANDARDIZATION (IMPROVED):
+- Annual: ["2024", "2023"] (always include previous year)
+- Quarterly: ["Q1-2024", "Q1-2023"] (always include previous year)
+- Multiple quarters: Separate queries per quarter
+- Cross-period: Separate queries per period set
 
-CONTEXT-AWARE EXAMPLES:
-Previous query: "UBL and JS Bank 2024 annual balance sheet"
-Follow-up: "Show me their per sector exposure" 
-→ Infer companies: UBL, JSBL; Create queries for sector/exposure data
+SEARCH QUERY: "[COMPANY] [STATEMENT_TYPE/ANALYSIS_TYPE] [PERIOD]"
 
-Previous query: "HBL quarterly profit and loss for 2024"
-Follow-up: "What about their lending exposure"
-→ Infer company: HBL; Create queries for lending exposure data
-
-Previous query: "MCB and NBP comparison 2024"
-Follow-up: "I want to see exposure by sector and industry"
-→ Infer companies: MCB, NBP; Create queries for sector and industry exposure
-
-STANDARD EXAMPLES:
-
-**LEVEL 1: SIMPLE (1×1×1 = 1 query)**
-Query: "HBL 2024 balance sheet"
-→ Creates: 1 query (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]}), intent: "statement"
-
-Query: "MCB Q1 2021 profit and loss"
-→ Creates: 1 query (search_query: "MCB profit and loss Q1 2021", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "quarterly", filing_period: ["Q1-2022", "Q1-2021"]}), intent: "statement"
-
-**LEVEL 2: DUAL DIMENSION (2×1×1, 1×2×1, 1×1×2 = 2 queries each)**
-Query: "HBL and UBL 2024 balance sheet"
-→ Creates: 2 queries:
-  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "UBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "analysis"
-
-Query: "HBL Q1 2024 and Q2 2024 balance sheet"
-→ Creates: 2 queries:
-  - (search_query: "HBL balance sheet Q1 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q1-2024", "Q1-2023"]})
-  - (search_query: "HBL balance sheet Q2 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q2-2024", "Q2-2023"]})
-→ Intent: "analysis"
-
-Query: "HBL 2024 balance sheet and profit and loss"
-→ Creates: 2 queries:
-  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "statement"
-
-**LEVEL 3: TRIPLE DIMENSION (2×2×1, 2×1×2, 1×2×2 = 4 queries each)**
-Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet"
-→ Creates: 4 queries (2 companies × 2 period sets × 1 statement), intent: "analysis"
-
-Query: "HBL and UBL 2024 balance sheet and profit and loss"
-→ Creates: 4 queries (2 companies × 1 period set × 2 statements), intent: "analysis"
-
-Query: "HBL Q1 2024 and Q2 2024 balance sheet and cash flow"
-→ Creates: 4 queries (1 company × 2 period sets × 2 statements), intent: "analysis"
-
-**LEVEL 4: FULL COMPLEXITY (2×2×2 = 8 queries)**
-Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet and profit and loss"
-→ Creates: 8 queries (2 companies × 2 period sets × 2 statements), intent: "analysis"
-
-**LEVEL 5: CROSS-PERIOD COMPLEXITY**
-Query: "HBL 2024 and 2022 balance sheet"
-→ Creates: 2 queries using period sets ["2024", "2023"] and ["2022", "2021"], intent: "analysis"
-
-Query: "HBL last 3 quarters balance sheet"
-→ Creates: 3 queries:
-  - (search_query: "HBL balance sheet Q1 2025", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q1-2025", "Q1-2024"]})
-  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL balance sheet Q3 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q3-2024", "Q3-2023"]})
-→ Intent: "analysis"
-
-**LEVEL 6: NOTES AND ADVANCED COMBINATIONS**
-
-Query: "Get me the profit and loss account for UBL and HBL with full notes breakdown in 2024"
-→ Creates: 4 queries (2 statement queries + 2 note queries):
-  **Statement queries (is_statement = "yes"):**
-  - (search_query: "UBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  **Note queries (is_note = "yes", note_link = "profit_and_loss"):**
-  - (search_query: "UBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "analysis"
+STANDARD EXAMPLES  (intent = "analysis" unless noted)
+# Δ = only keys that differ from the prior example are shown;
+# full objects are provided where the pattern is new or complex.
 
 
-Query: "HBL, UBL, and MCB Q1 2024 balance sheet and cash flow with notes"
-→ Creates: 12 queries (3 companies × 1 period set × 2 statements = 6 + 6 note queries), intent: "analysis"
+*LEVEL-1 • 1×1×1  → 1 query*
 
-Query: "HBL sector exposure 2024"
-→ Creates: 1 query (search_query: "HBL sector exposure 2024", metadata_filters: {ticker: "HBL", filing_type: "annual", filing_period: ["2024", "2023"]}), intent: "analysis"
+"HBL 2024 balance sheet"      # single co / year / stmt
+→ search_query:  "HBL balance sheet 2024"
+→ metadata_filters:
+  {ticker:"HBL", statement_type:"balance_sheet",
+   is_statement:"yes", is_note:"no",
+   filing_type:"annual", filing_period:["2024","2023"]}
+→ intent = "statement"
 
-Query: "UBL and MCB geographic breakdown Q1 2024"
-→ Creates: 2 queries (search_query: "UBL geographic breakdown Q1 2024", metadata_filters: {ticker: "UBL", filing_type: "quarterly", filing_period: ["Q1-2024", "Q1-2023"]}), intent: "analysis"
+*LEVEL-2 • 2-way cartesian  → 2 queries*
 
-**LEVEL 7: BROAD ANALYSIS QUERY EXPANSION**
+"HBL **and** UBL 2024 balance sheet"
+→ one query per company (same filters as Level-1, ticker adjusted)
 
-Query: "Get me a set of ratios for FABL and MEBL in 2024"
-→ Creates: 8 queries (2 companies × 3 statement types + 2 exposure queries):
-  **Statement queries (is_statement = "yes"):**
-  - (search_query: "FABL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "FABL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "FABL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "MEBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "MEBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "MEBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
-  **Exposure queries (no metadata filters):**
-  - (search_query: "FABL sector exposure 2024", metadata_filters: {ticker: "FABL", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "MEBL sector exposure 2024", metadata_filters: {ticker: "MEBL", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "analysis"
+*LEVEL-3 • 3 dimensions  → 4 queries*
 
-Query: "Analyze HBL performance over the last 4 years"
-→ Creates: 6 queries (1 company × 3 statement types × 2 period sets):
-  **Statement queries (is_statement = "yes"):**
-  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "HBL balance sheet 2022", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2022", "2021"]})
-  - (search_query: "HBL profit and loss 2022", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2022", "2021"]})
-  - (search_query: "HBL cash flow 2022", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2022", "2021"]})
-→ Intent: "analysis"
+"HBL & UBL 2024 balance sheet **and** profit and loss"
+→ 2 companies × 2 statements × 1 period
 
-Query: "Compare UBL performance in 2024 and 2022"
-→ Creates: 6 queries (1 company × 3 statement types × 2 period sets):
-  **Statement queries (is_statement = "yes"):**
-  - (search_query: "UBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "UBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "UBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
-  - (search_query: "UBL balance sheet 2022", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2022", "2021"]})
-  - (search_query: "UBL profit and loss 2022", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2022", "2021"]})
-  - (search_query: "UBL cash flow 2022", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2022", "2021"]})
-→ Intent: "analysis"
+*LEVEL-4 • 2×2×2  → 8 queries*
+
+"HBL & UBL Q1-2024 **and** Q2-2024 balance sheet & P&L"
+Example of **one** of the eight queries (HBL, Q1-2024, P&L):
+→ search_query: "HBL profit and loss Q1 2024"
+→ metadata_filters:
+  {ticker:"HBL", statement_type:"profit_and_loss",
+   is_statement:"yes", is_note:"no",
+   filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+
+*CROSS-PERIOD  • Annual sets*
+
+"HBL 2024 **and** 2022 balance sheet"
+→ produces two queries with `filing_period`
+   ["2024","2023"]  and  ["2022","2021"]
+
+*LAST-N-QUARTERS  • shows Q4 calc pattern*
+
+"HBL last 3 quarters balance sheet"
+1  "HBL balance sheet Q1 2025"
+    {is_statement:"yes", filing_type:"quarterly",
+     filing_period:["Q1-2025","Q1-2024"]}
+2  "HBL balance sheet Q3 2024"
+    {is_statement:"yes", filing_type:"quarterly",
+     filing_period:["Q3-2024","Q3-2023"]}
+3  "HBL balance sheet 2024"
+    {is_statement:"yes", filing_type:"annual",
+     filing_period:["2024","2023"]}   # used to derive Q4
+
+*NOTES  • statement + note (mutual exclusion)*
+
+"UBL profit and loss **with notes** 2024"
+Statement query:  
+  {ticker:"UBL", statement_type:"profit_and_loss",
+   is_statement:"yes", is_note:"no",
+   filing_type:"annual", filing_period:["2024","2023"]}
+Note query:  
+  {ticker:"UBL", note_link:"profit_and_loss",
+   is_statement:"no",  is_note:"yes",
+   filing_type:"annual", filing_period:["2024","2023"]}
+
+*BROAD ANALYSIS EXPANSION*
+
+"Ratios for FABL & MEBL 2024"
+Example (FABL):
+• Statement query (balance sheet)  
+  {ticker:"FABL", statement_type:"balance_sheet",
+   is_statement:"yes", filing_type:"annual",
+   filing_period:["2024","2023"]}
+• Exposure query (sector)  
+  {ticker:"FABL", filing_type:"annual",
+   filing_period:["2024","2023"]}   # is_statement/is_note left blank
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # Q4 CALCULATION INSTRUCTIONS - For Financial Analysis
+    # IMPROVED Q4 CALCULATION
     # ═══════════════════════════════════════════════════════════════════════
     
-    Q4_CALCULATION_INSTRUCTIONS = """
-
-CRITICAL Q4 CALCULATION REQUIREMENT:
+    Q4_CALCULATION_INSTRUCTIONS = """CRITICAL Q4 CALCULATION REQUIREMENT:
 Since you have both quarterly (Q1, Q2, Q3) and annual data, you MUST calculate Q4 figures using:
 **Q4 = Annual - Q3**
 
@@ -489,37 +357,22 @@ EXAMPLE Q4 CALCULATION:
 If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Revenue = 250,000"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # RESPONSE GENERATION PROMPTS - For Different Analysis Types
+    # RESPONSE GENERATION PROMPTS - Improved with restored guardrails
     # ═══════════════════════════════════════════════════════════════════════
 
     @classmethod
     def get_statement_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
-                           is_quarterly_comparison: bool, is_side_by_side: bool, 
-                           needs_q4_calculation: bool, financial_statement_scope: str = None) -> str:
-        """Generate statement analysis prompt based on context"""
+                           is_quarterly_comparison: bool, needs_q4_calculation: bool, 
+                           financial_statement_scope: str = None) -> str:
+        """Generate improved statement analysis prompt with restored guardrails"""
         
-        # Determine scope label
-        scope_label = financial_statement_scope if financial_statement_scope else "unconsolidated"
-        if scope_label == "consolidated":
-            scope_display = "Consolidated"
-        elif scope_label == "unconsolidated":
-            scope_display = "Unconsolidated"
-        else:
-            scope_display = "Unconsolidated"  # Default
-        
+        scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
+        companies_set = set(companies)
         
-        # Multi-company side-by-side comparison
-        if is_multi_company and not is_quarterly_comparison:
-            companies_set = set(companies)
-            
-            # Check if this is actually a quarterly request based on query content
-            is_quarterly_in_query = any(q_term in query.lower() for q_term in ["quarterly", "quarter", "q1", "q2", "q3", "q4"])
-            
-            if is_quarterly_in_query:
-                # This is a multi-company quarterly request
-                return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+        # Multi-company quarterly
+        if is_multi_company and any(q_term in query.lower() for q_term in ["quarterly", "quarter", "q1", "q2", "q3", "q4"]):
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -527,109 +380,23 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
 
 {cls.QUARTERLY_DATA_PRIORITY}
 
-REQUIRED STRUCTURE - MULTI-COMPANY QUARTERLY ANALYSIS:
-Use the templates below to create compelling tables that show:
-
-## {', '.join(companies_set)} - Quarterly Performance Analysis ({scope_display})
-**Quarterly Statement Analysis**
-*(All amounts in PKR MM unless otherwise specified)*
-
-{cls.QUARTERLY_TREND_TEMPLATES}
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
-
-**Key Investment Banking Analysis:**
-- Quarter-over-quarter performance momentum
-- Competitive positioning vs peers
-- Key performance driver identification
-- Risk/return profile assessment
-
-CRITICAL: Use the quarterly data chunks (those with Q1, Q2, Q3 periods) rather than annual chunks. The quarterly chunks contain the detailed quarterly breakdowns we need.
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{cls.OUTPUT_FORMAT_STATEMENT}
-
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-"""
-            else:
-                # Regular multi-company annual comparison
-                return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-REQUIRED STRUCTURE - COMPREHENSIVE BANKING COMPARISON:
-Use BANKING_TABLE_EXAMPLES and COMPARATIVE_ANALYSIS_TEMPLATES to create professional analysis:
-
-## {', '.join(companies_set)} - Comprehensive Financial Analysis ({scope_display})
-**Statement Analysis for the periods shown in the data**
-*(All amounts in PKR MM unless otherwise specified)*
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
-
-**Investment Banking Insights:**
-- Competitive advantage analysis
-- Financial performance drivers
-- Risk assessment and positioning
-- Strategic implications and outlook
-
-IMPORTANT: 
-- Create a SINGLE side-by-side table with all companies as columns
-- Use the ACTUAL data from the provided chunks (trust the filing_period metadata)
-- Track which data chunks you actually use in your response
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{cls.OUTPUT_FORMAT_STATEMENT}
-
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-"""
-        
-        # Quarterly comparison for single company
-        elif is_quarterly_comparison and not is_multi_company:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE - QUARTERLY PERFORMANCE ANALYSIS:
-Use QUARTERLY_TREND_TEMPLATES and BANKING_TABLE_EXAMPLES for comprehensive analysis:
-
-## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive ({scope_display})
-**Quarterly Statement of Financial Position**
-*(All amounts in PKR MM unless otherwise specified)*
+## {', '.join(companies_set)} - Quarterly Analysis ({scope_display})
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
-{cls.BANKING_TABLE_EXAMPLES}
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_STATEMENT}
 
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-"""
+Context: [chunks]"""
         
-        # Multi-company quarterly comparison
+        # Multi-company annual
         elif is_multi_company:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -637,29 +404,21 @@ and using ONLY the following context which was retrieved from financial reports:
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE - MULTI-COMPANY FINANCIAL ANALYSIS:
-Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for professional presentation:
-
-## Multi-Company Financial Statement Comparison
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+## {', '.join(companies_set)} - Financial Analysis ({scope_display})
 
 {cls.BANKING_TABLE_EXAMPLES}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_STATEMENT}
 
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-"""
+Context: [chunks]"""
         
-        # Single company statement
-        else:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+        # Single company quarterly
+        elif is_quarterly_comparison:
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
 {cls.FORMATTING_REQUIREMENTS}
 
@@ -667,234 +426,140 @@ and using ONLY the following context which was retrieved from financial reports:
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
+## {companies[0] if companies else 'Company'} - Quarterly Analysis ({scope_display})
 
-Present the financial statement data in clean markdown table format. NO code blocks.
+{cls.QUARTERLY_TREND_TEMPLATES}
 
-and using ONLY the following context which was retrieved from financial reports:
+{cls.BANKING_TABLE_EXAMPLES}
 
-[chunks]
-"""
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-        print("\n[DEBUG] Prompt after initial construction:\n" + (prompt[:500] + '...'))
-        print("\n[DEBUG] Full prompt after initial construction:")
-        print(prompt)
-        print("\n[DEBUG] Looking for placeholders:")
-        print("Contains {OUTPUT_FORMAT_ANALYSIS}:", "{OUTPUT_FORMAT_ANALYSIS}" in prompt)
-        print("Contains {RATIO_ANALYSIS_GUIDANCE}:", "{RATIO_ANALYSIS_GUIDANCE}" in prompt)
-        print("Contains {REPORT_STRUCTURE_TEMPLATE}:", "{REPORT_STRUCTURE_TEMPLATE}" in prompt)
-        print("Contains {CHAIN_OF_THOUGHT_INSTRUCTIONS}:", "{CHAIN_OF_THOUGHT_INSTRUCTIONS}" in prompt)
+{cls.OUTPUT_FORMAT_STATEMENT}
 
-        return prompt
+Context: [chunks]"""
+        
+        # Single company
+        else:
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+
+{cls.FORMATTING_REQUIREMENTS}
+
+{q4_instructions}
+
+{cls.DATA_SOURCE_INSTRUCTIONS}
+
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
+
+{cls.OUTPUT_FORMAT_STATEMENT}
+
+Context: [chunks]"""
 
     @classmethod
     def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
                           is_quarterly_comparison: bool, needs_q4_calculation: bool, 
                           financial_statement_scope: str = None) -> str:
-        """Generate comprehensive analysis prompt for all non-statement requests"""
-        # Determine scope label
-        scope_label = financial_statement_scope if financial_statement_scope else "unconsolidated"
-        if scope_label == "consolidated":
-            scope_display = "Consolidated"
-        elif scope_label == "unconsolidated":
-            scope_display = "Unconsolidated"
-        else:
-            scope_display = "Unconsolidated"  # Default
+        """Generate improved analysis prompt with restored guardrails"""
         
+        scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
         companies_set = set(companies)
         
         if is_quarterly_comparison:
-            return """
-{EQUITY_RESEARCH_ANALYST_FRAMING}
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
-{FORMATTING_REQUIREMENTS}
-- Show trends and growth patterns
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-{DATA_SOURCE_INSTRUCTIONS}
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-{ENHANCED_REASONING_FRAMEWORK}
+{cls.ENHANCED_REASONING_FRAMEWORK}
 
-STRUCTURE - QUARTERLY COMPARATIVE ANALYSIS:
-Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
+## Quarterly Performance Analysis
 
-## Quarterly Performance Comparison
+{cls.QUARTERLY_TREND_TEMPLATES}
 
-{QUARTERLY_TREND_TEMPLATES}
+{cls.BANKING_TABLE_EXAMPLES}
 
-{BANKING_TABLE_EXAMPLES}
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-## Investment Banking Quarterly Insights
-- Seasonality patterns and business cycle analysis
-- Growth momentum and trend sustainability  
-- Performance drivers and operational efficiency
-- Quarterly volatility and risk assessment
+{cls.OUTPUT_FORMAT_ANALYSIS}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
-
-{OUTPUT_FORMAT_ANALYSIS}
-
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-""".format(
-                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
-                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
-                q4_instructions=q4_instructions,
-                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
-                ENHANCED_REASONING_FRAMEWORK=cls.ENHANCED_REASONING_FRAMEWORK,
-                QUARTERLY_TREND_TEMPLATES=cls.QUARTERLY_TREND_TEMPLATES,
-                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
-                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
-            )
+Context: [chunks]"""
+        
         elif is_multi_company:
-            return """
-{EQUITY_RESEARCH_ANALYST_FRAMING}
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
-Companies involved: {companies}
+Companies: {', '.join(companies_set)}
 
-{FORMATTING_REQUIREMENTS}
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-{DATA_SOURCE_INSTRUCTIONS}
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-{ENHANCED_REASONING_FRAMEWORK}
+{cls.ENHANCED_REASONING_FRAMEWORK}
 
-STRUCTURE - COMPREHENSIVE MULTI-COMPANY ANALYSIS:
-Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
+## Multi-Company Analysis ({scope_display})
 
-## Multi-Company Financial Analysis
-**{companies} - Comprehensive Performance Analysis ({scope_display})**
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
 
-{COMPARATIVE_ANALYSIS_TEMPLATES}
+{cls.BANKING_TABLE_EXAMPLES}
 
-{BANKING_TABLE_EXAMPLES}
+{cls.RATIO_ANALYSIS_GUIDANCE}
 
-## Investment Banking Key Insights
-- Competitive positioning and market share analysis
-- Financial performance and operational efficiency comparison
-- Risk profile and capital strength assessment
-- Strategic outlook and investment recommendations
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-## Banking Ratio Analysis Approach
-{RATIO_ANALYSIS_GUIDANCE}
+{cls.OUTPUT_FORMAT_ANALYSIS}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
-
-{OUTPUT_FORMAT_ANALYSIS}
-
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-""".format(
-                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
-                companies=", ".join(companies_set),
-                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
-                q4_instructions=q4_instructions,
-                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
-                ENHANCED_REASONING_FRAMEWORK=cls.ENHANCED_REASONING_FRAMEWORK,
-                scope_display=scope_display,
-                COMPARATIVE_ANALYSIS_TEMPLATES=cls.COMPARATIVE_ANALYSIS_TEMPLATES,
-                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
-                RATIO_ANALYSIS_GUIDANCE="{RATIO_ANALYSIS_GUIDANCE}",
-                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
-            )
+Context: [chunks]"""
+        
         else:
-            return """
-{EQUITY_RESEARCH_ANALYST_FRAMING}
+            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
 
-{FORMATTING_REQUIREMENTS}
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-{DATA_SOURCE_INSTRUCTIONS}
-
-STRUCTURE - COMPREHENSIVE FINANCIAL ANALYSIS:
-Use BANKING_TABLE_EXAMPLES for professional analysis:
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
 ## Financial Analysis
 
-{BANKING_TABLE_EXAMPLES}
+{cls.BANKING_TABLE_EXAMPLES}
 
-## Investment Banking Insights
-- Financial performance drivers and trends
-- Operational efficiency and risk assessment
-- Strategic implications and outlook
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-At the end, list ONLY the chunk IDs that you actually referenced:
-Used Chunks: [list chunk IDs]
+{cls.OUTPUT_FORMAT_ANALYSIS}
 
-{OUTPUT_FORMAT_ANALYSIS}
-
-and using ONLY the following context which was retrieved from financial reports:
-
-[chunks]
-""".format(
-                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
-                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
-                q4_instructions=q4_instructions,
-                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
-                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
-                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
-            )
+Context: [chunks]"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # QUARTERLY ENHANCEMENT INSTRUCTIONS - For Query Planning
-    # ═══════════════════════════════════════════════════════════════════════
-    
-    QUARTERLY_ENHANCEMENT_INSTRUCTIONS = """
-
-IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for Q4 calculation:
-- Add quarterly queries for Q1, Q2, Q3 data
-- Add annual queries for the same companies and statement types
-- The annual data will be used to calculate Q4 = Annual - Q3"""
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # UTILITY METHODS
+    # UTILITY METHODS - Fixed unused parameter and added safe formatting
     # ═══════════════════════════════════════════════════════════════════════
     
     @classmethod
+    def _safe_format(cls, template: str, **kwargs) -> str:
+        """Safe formatting with descriptive error handling"""
+        try:
+            return template.format(**kwargs)
+        except KeyError as e:
+            raise ValueError(f"Missing placeholder {e} in prompt template") from None
+
+    @classmethod
     def get_prompt_for_intent(cls, intent: str, query: str, companies: List[str], 
                             is_multi_company: bool, is_quarterly_comparison: bool, 
-                            is_side_by_side: bool, needs_q4_calculation: bool, 
-                            financial_statement_scope: str = None) -> str:
-        """
-        Main method to get appropriate prompt based on intent and context
+                            needs_q4_calculation: bool, financial_statement_scope: str = None) -> str:
+        """Main method to get appropriate improved prompt with restored guardrails"""
         
-        Args:
-            intent: "statement", "analysis"
-            query: Original user query
-            companies: List of company tickers
-            is_multi_company: Whether multiple companies are involved
-            is_quarterly_comparison: Whether quarterly data is requested
-            is_side_by_side: Whether this is a statement request (simplified logic)
-            needs_q4_calculation: Whether Q4 calculation is needed
-            financial_statement_scope: "consolidated", "unconsolidated", or None (defaults to "unconsolidated")
-        """
-        
-        # Simplified routing logic: Check if this is a pure statement request
-        # Only use automatic detection if intent is not explicitly provided
-        if intent == "statement":
-            is_statement_request = True
-        elif intent == "analysis":
-            is_statement_request = False
-        else:
-            # Fallback to automatic detection if intent is not specified
-            is_statement_request = any(stmt_term in query.lower() for stmt_term in [
-                "statement", "balance sheet", "profit and loss", "cash flow", 
-                "income statement", "financial statement", "p&l", "p & l"
-            ])
+        is_statement_request = (intent == "statement" or 
+                              any(stmt_term in query.lower() for stmt_term in [
+                                  "statement", "balance sheet", "profit and loss", "cash flow", 
+                                  "income statement", "financial statement", "p&l", "p & l"
+                              ]))
 
-        # Helper to recursively format any string with the cls context
+        # Helper to recursively format placeholders
         def recursive_format(s: str) -> str:
             return s.format(
-                cls=cls,
                 RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
                 REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
                 CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
@@ -902,24 +567,14 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
 
         if is_statement_request:
             prompt = cls.get_statement_prompt(query, companies, is_multi_company, 
-                                          is_quarterly_comparison, is_side_by_side, 
-                                          needs_q4_calculation, financial_statement_scope)
+                                          is_quarterly_comparison, needs_q4_calculation, 
+                                          financial_statement_scope)
         else:
-            # Everything else gets comprehensive analysis (including ratios)
             prompt = cls.get_analysis_prompt(query, companies, is_multi_company, 
                                          is_quarterly_comparison, needs_q4_calculation, 
                                          financial_statement_scope)
 
-        print("\n[DEBUG] Prompt after initial construction:\n" + (prompt[:500] + '...'))
-        print("\n[DEBUG] Full prompt after initial construction:")
-        print(prompt)
-        print("\n[DEBUG] Looking for placeholders:")
-        print("Contains {OUTPUT_FORMAT_ANALYSIS}:", "{OUTPUT_FORMAT_ANALYSIS}" in prompt)
-        print("Contains {RATIO_ANALYSIS_GUIDANCE}:", "{RATIO_ANALYSIS_GUIDANCE}" in prompt)
-        print("Contains {REPORT_STRUCTURE_TEMPLATE}:", "{REPORT_STRUCTURE_TEMPLATE}" in prompt)
-        print("Contains {CHAIN_OF_THOUGHT_INSTRUCTIONS}:", "{CHAIN_OF_THOUGHT_INSTRUCTIONS}" in prompt)
-
-        # Recursively format OUTPUT_FORMAT_ANALYSIS and similar before inserting
+        # Replace placeholders
         prompt = prompt.replace(
             "{OUTPUT_FORMAT_ANALYSIS}",
             recursive_format(cls.OUTPUT_FORMAT_ANALYSIS)
@@ -941,26 +596,27 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
             recursive_format(cls.CHAIN_OF_THOUGHT_INSTRUCTIONS)
         )
 
-        print("\n[DEBUG] Prompt after replacing OUTPUT_FORMAT_ANALYSIS:\n" + (prompt[:500] + '...'))
-
-        # Now, format the prompt itself for any remaining placeholders
-        prompt = prompt.format(
-            cls=cls,
-            RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
-            REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
-            CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
-        )
-
-        print("\n[DEBUG] Prompt after final formatting:\n" + (prompt[:500] + '...'))
+        # Final formatting with safe error handling
+        try:
+            prompt = cls._safe_format(prompt,
+                RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
+                REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
+                CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
+            )
+        except ValueError as e:
+            # Log the error and return a fallback prompt
+            import logging
+            logging.error(f"Prompt formatting error: {e}")
+            return f"Error in prompt generation: {e}. Please try again."
         
         return prompt
 
     @classmethod
     def get_parsing_user_prompt(cls, user_query: str, bank_tickers: List[str], 
                               is_quarterly_request: bool) -> str:
-        """Generate user prompt for Claude parsing"""
+        """Generate improved user prompt for Claude parsing"""
         
-        quarterly_instruction = cls.QUARTERLY_ENHANCEMENT_INSTRUCTIONS if is_quarterly_request else ""
+        quarterly_instruction = "\nInclude quarterly AND annual queries for Q4 calculation." if is_quarterly_request else ""
         
         return f"""Query: "{user_query}"
 
@@ -971,7 +627,7 @@ Available bank tickers: {bank_tickers}
 Create QueryPlan following system parsing rules."""
 
 # ═══════════════════════════════════════════════════════════════════════
-# CONVENIENCE INSTANCE FOR EASY IMPORTING
+# CONVENIENCE INSTANCE FOR EASY IMPORTING - Dual alias for compatibility
 # ═══════════════════════════════════════════════════════════════════════
 
-prompts = PromptLibrary() 
+prompts = OptimizedPromptLibrary()
