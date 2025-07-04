@@ -48,29 +48,31 @@ CURRENCY FORMAT REQUIREMENTS:
     CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
 Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
+    RATIO_ANALYSIS_GUIDANCE = """BANKING RATIO ANALYSIS GUIDANCE:
+- When ratios are explicitly requested, identify and calculate the most relevant banking ratios based on available data
+- Focus on ratios that top-tier investment banking analysts would pay attention to for bank analysis, including but not limited to:
+  * Profitability: ROE, ROA, Net Interest Margin, Cost-to-Income Ratio
+  * Asset Quality: NPL Ratio, Provision Coverage Ratio, Asset Quality Ratio
+  * Liquidity: Advance-to-Deposit Ratio, Liquid Assets Ratio, Loan-to-Deposit Ratio
+  * Capital Strength: Capital Adequacy Ratio, Tier 1 Capital Ratio, Leverage Ratio
+  * Efficiency: Operating Efficiency, Asset Utilization, Revenue per Employee
+- Focus on ratios where you have complete data and that provide meaningful insights for the specific query
+- Show calculation method: "Ratio = Numerator / Denominator" for each ratio you calculate
+- If certain ratios cannot be calculated due to missing data, focus on what can be meaningfully analyzed
+- Structure your analysis based on what data is actually available rather than following rigid templates
+- Prioritize ratios that are most relevant to the user's specific query focus (e.g., efficiency, profitability, asset quality)"""
+
     OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
 
     OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-RATIO ANALYSIS REQUIREMENTS:
-- When ratios are explicitly requested in the query, calculate ALL relevant ratios using data from the chunks
-- For operating cost ratios: Calculate Cost/Income, Operating Efficiency, Expense Ratios
-- For profitability ratios: Calculate ROE, ROA, Net Margin, Gross Margin (if data available)
-- For liquidity ratios: Calculate Current Ratio, Quick Ratio (if data available)
-- For leverage ratios: Calculate Debt/Equity, Capital Adequacy (if data available)
-- Always show the calculation method: "Ratio = Numerator / Denominator"
+{cls.RATIO_ANALYSIS_GUIDANCE}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
     OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-RATIO ANALYSIS REQUIREMENTS:
-- When ratios are explicitly requested in the query, calculate ALL relevant ratios using data from the chunks
-- For operating cost ratios: Calculate Cost/Income, Operating Efficiency, Expense Ratios
-- For profitability ratios: Calculate ROE, ROA, Net Margin, Gross Margin (if data available)
-- For liquidity ratios: Calculate Current Ratio, Quick Ratio (if data available)
-- For leverage ratios: Calculate Debt/Equity, Capital Adequacy (if data available)
-- Always show the calculation method: "Ratio = Numerator / Denominator"
+{cls.RATIO_ANALYSIS_GUIDANCE}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
@@ -86,75 +88,67 @@ ONLY include banking ratios and metrics that are explicitly available in the ret
     # ═══════════════════════════════════════════════════════════════════════
     
     BANKING_TABLE_EXAMPLES = """
-COMPREHENSIVE BANKING ANALYSIS TABLES:
+FLEXIBLE BANKING ANALYSIS TABLES:
 
-**Key Balance Sheet Items:**
-| Line Item | Current | Previous | YoY Growth | Industry Avg |
-|-----------|---------|----------|------------|--------------|
-| Total Assets | 2,847,123 | 2,654,891 | +7.2% | +5.8% |
-| Customer Deposits | 2,234,567 | 2,089,432 | +6.9% | +6.1% |
-| Advances (Gross) | 1,567,890 | 1,432,110 | +9.5% | +8.2% |
-| Shareholders' Equity | 287,654 | 267,123 | +7.7% | +6.8% |
+Create tables that effectively present the available data. Use the most appropriate format based on what data you have and what insights it provides. Examples of table structures:
 
-**Key P&L Performance:**
-| Metric | Current | Previous | Change | ROE Impact |
-|--------|---------|----------|--------|------------|
-| Net Interest Income | 156,789 | 142,567 | +10.0% | +2.1% |
-| Non-Interest Income | 45,678 | 41,234 | +10.8% | +0.6% |
-| Operating Expenses | 89,456 | 84,123 | +6.3% | -0.8% |
-| Net Profit | 78,901 | 71,234 | +10.8% | +1.9% |
+**Key Financial Metrics:**
+| Line Item | Current | Previous | YoY Growth |
+|-----------|---------|----------|------------|
+| [Use actual line items from your data] | [Value] | [Value] | [%] |
 
-**Banking Ratios & Metrics:**
-| Ratio | Current | Previous | Trend | Benchmark |
-|-------|---------|----------|-------|-----------|
-| ROE (%) | 18.2 | 17.1 | ↗ | 16.5 |
-| ROA (%) | 2.8 | 2.7 | ↗ | 2.5 |
-| Capital Adequacy Ratio (%) | 16.8 | 16.2 | ↗ | >11.5 |
-| Advance-to-Deposit Ratio (%) | 70.2 | 68.6 | ↗ | 65-75 |
-| Cost/Income (%) | 44.3 | 45.1 | ↘ | <45 |
-| NPL Ratio (%) | 2.1 | 2.3 | ↘ | <3.0 |
+**Performance Ratios:**
+| Ratio | Current | Previous | Trend | Calculation |
+|-------|---------|----------|-------|-------------|
+| [Calculate ratios based on available data] | [Value] | [Value] | [↗/↘] | [Formula] |
 
-Use these comprehensive examples as templates, adapting the specific metrics based on the actual query and available data."""
+**Comparative Analysis:**
+| Bank | [Metric 1] | [Metric 2] | [Metric 3] |
+|------|------------|------------|------------|
+| [Bank A] | [Value] | [Value] | [Value] |
+| [Bank B] | [Value] | [Value] | [Value] |
+
+Focus on presenting the most relevant data in the most effective format. Adapt table structures based on what data is actually available and what insights it provides."""
 
     QUARTERLY_TREND_TEMPLATES = """
-QUARTERLY PROGRESSION ANALYSIS:
+FLEXIBLE QUARTERLY ANALYSIS:
+
+Create quarterly analysis tables based on the available data. Focus on the most relevant metrics for the specific analysis:
 
 **Quarterly Performance Tracking:**
 | Metric | Q1 | Q2 | Q3 | Q4* | Trend | Growth |
 |--------|----|----|----|----|-------|--------|
-| Net Interest Income | 38,567 | 39,123 | 40,234 | 38,865 | ↗ | +0.8% |
-| Customer Deposits | 2,156,789 | 2,189,456 | 2,234,567 | 2,267,123 | ↗ | +5.1% |
-| Advances | 1,467,890 | 1,501,234 | 1,534,567 | 1,567,890 | ↗ | +6.8% |
-| ROE (%) | 17.8 | 18.1 | 18.4 | 18.2 | ↗ | +0.4pp |
+| [Use actual metrics from your data] | [Value] | [Value] | [Value] | [Value] | [↗/↘] | [%] |
 
-*Q4 = Calculated (Annual - Q3), ROE = Return on Equity*
+*Q4 = Calculated (Annual - Q3) where applicable*
 
-**Seasonal Patterns:**
+**Seasonal Patterns (if relevant data available):**
 | Business Line | Q1 | Q2 | Q3 | Q4 | Peak Quarter |
 |---------------|----|----|----|----|--------------|
-| Corporate Banking | 145 | 156 | 167 | 178 | Q4 |
-| Consumer Banking | 234 | 267 | 289 | 245 | Q3 |
-| Treasury Operations | 67 | 71 | 69 | 73 | Q4 |"""
+| [Use actual business lines from your data] | [Value] | [Value] | [Value] | [Value] | [Quarter] |
+
+Focus on presenting the most meaningful quarterly trends based on available data rather than forcing specific metrics."""
 
     COMPARATIVE_ANALYSIS_TEMPLATES = """
-MULTI-BANK COMPETITIVE ANALYSIS:
+FLEXIBLE MULTI-BANK COMPETITIVE ANALYSIS:
+
+Create comparative analysis tables based on the available data. Focus on the most relevant metrics for the specific analysis:
 
 **Peer Comparison Matrix:**
-| Bank | Assets | ROE | ROA | CAR | ADR | NPL | Market Share |
-|------|--------|-----|-----|-----|-----|-----|--------------|
-| [Bank A] | 2,847 | 18.2% | 2.8% | 16.8% | 70.2% | 2.1% | 12.4% |
-| [Bank B] | 3,156 | 16.9% | 2.6% | 15.9% | 68.7% | 2.8% | 13.8% |
-| [Bank C] | 2,234 | 19.1% | 3.1% | 17.2% | 72.1% | 1.9% | 9.7% |
-| Industry Avg | 2,746 | 17.8% | 2.7% | 16.3% | 69.8% | 2.4% | - |
+| Bank | [Key Metric 1] | [Key Metric 2] | [Key Metric 3] | [Key Metric 4] |
+|------|----------------|----------------|----------------|----------------|
+| [Bank A] | [Value] | [Value] | [Value] | [Value] |
+| [Bank B] | [Value] | [Value] | [Value] | [Value] |
 
-*CAR = Capital Adequacy Ratio, ADR = Advance-to-Deposit Ratio*
+*Include only metrics where you have complete data for meaningful comparison*
 
 **Performance Ranking:**
-| Metric | Best Performer | 2nd | 3rd | Industry Position |
-|--------|----------------|-----|-----|-------------------|
-| ROE | [Bank C] (19.1%) | [Bank A] (18.2%) | [Bank B] (16.9%) | Above Average |
-| Asset Quality | [Bank C] (1.9%) | [Bank A] (2.1%) | [Bank B] (2.8%) | Top Quartile |
-| Efficiency | [Bank A] (44.3%) | [Bank B] (46.1%) | [Bank C] (47.8%) | Industry Leader |"""
+| Metric | Best Performer | 2nd Best | Key Insight |
+|--------|----------------|----------|-------------|
+| [Metric 1] | [Bank] ([Value]) | [Bank] ([Value]) | [Brief insight] |
+| [Metric 2] | [Bank] ([Value]) | [Bank] ([Value]) | [Brief insight] |
+
+Focus on presenting the most meaningful comparisons based on available data rather than forcing specific metrics."""
 
     # ═══════════════════════════════════════════════════════════════════════
     # PARSING PROMPTS - For Claude 3.5 Haiku Query Understanding
@@ -202,14 +196,13 @@ METADATA FILTER PRIORITIES (CRITICAL):
 
 INTENT TYPES:
 - "statement": Raw financial data requests (PRIORITY when statement types mentioned) 
-- "comparison": Multi-entity comparisons (triggered when more than one ticker mentioned)
-- "analysis": Insights and trends requests OR when "research" keyword appears OR fallback when not statement/comparison
+- "analysis": Insights and trends requests, multi-entity/multi-company queries, or when "research" keyword appears, or fallback when not statement
 
 INTENT PRIORITY RULES:
 - If query mentions specific statements (balance sheet, profit and loss, cash flow) → Use "statement" intent unless explicitly asking for analysis
-- If query mentions more than one ticker/company → Use "comparison" intent
+- If query mentions more than one ticker/company → Use "analysis" intent
 - If query contains "research" keyword → Use "analysis" intent
-- If intent doesn't fall into statement or comparison → Use "analysis" intent
+- If intent doesn't fall into statement → Use "analysis" intent
 
 BROAD ANALYSIS QUERY EXPANSION RULES:
 - For broad analysis queries (ratios, performance, financial health, comparison), automatically include key statement types
@@ -261,7 +254,7 @@ Query: "HBL and UBL 2024 balance sheet"
 → Creates: 2 queries:
   - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
   - (search_query: "UBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "comparison"
+→ Intent: "analysis"
 
 Query: "HBL Q1 2024 and Q2 2024 balance sheet"
 → Creates: 2 queries:
@@ -277,17 +270,17 @@ Query: "HBL 2024 balance sheet and profit and loss"
 
 **LEVEL 3: TRIPLE DIMENSION (2×2×1, 2×1×2, 1×2×2 = 4 queries each)**
 Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet"
-→ Creates: 4 queries (2 companies × 2 period sets × 1 statement), intent: "comparison"
+→ Creates: 4 queries (2 companies × 2 period sets × 1 statement), intent: "analysis"
 
 Query: "HBL and UBL 2024 balance sheet and profit and loss"
-→ Creates: 4 queries (2 companies × 1 period set × 2 statements), intent: "comparison"
+→ Creates: 4 queries (2 companies × 1 period set × 2 statements), intent: "analysis"
 
 Query: "HBL Q1 2024 and Q2 2024 balance sheet and cash flow"
 → Creates: 4 queries (1 company × 2 period sets × 2 statements), intent: "analysis"
 
 **LEVEL 4: FULL COMPLEXITY (2×2×2 = 8 queries)**
 Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet and profit and loss"
-→ Creates: 8 queries (2 companies × 2 period sets × 2 statements), intent: "comparison"
+→ Creates: 8 queries (2 companies × 2 period sets × 2 statements), intent: "analysis"
 
 **LEVEL 5: CROSS-PERIOD COMPLEXITY**
 Query: "HBL 2024 and 2022 balance sheet"
@@ -310,11 +303,11 @@ Query: "Get me the profit and loss account for UBL and HBL with full notes break
   **Note queries (is_note = "yes", note_link = "profit_and_loss"):**
   - (search_query: "UBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
   - (search_query: "HBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "comparison"
+→ Intent: "analysis"
 
 
 Query: "HBL, UBL, and MCB Q1 2024 balance sheet and cash flow with notes"
-→ Creates: 12 queries (3 companies × 1 period set × 2 statements = 6 + 6 note queries), intent: "comparison"
+→ Creates: 12 queries (3 companies × 1 period set × 2 statements = 6 + 6 note queries), intent: "analysis"
 
 Query: "HBL sector exposure 2024"
 → Creates: 1 query (search_query: "HBL sector exposure 2024", metadata_filters: {ticker: "HBL", filing_type: "annual", filing_period: ["2024", "2023"]}), intent: "analysis"
@@ -336,7 +329,7 @@ Query: "Get me a set of ratios for FABL and MEBL in 2024"
   **Exposure queries (no metadata filters):**
   - (search_query: "FABL sector exposure 2024", metadata_filters: {ticker: "FABL", filing_type: "annual", filing_period: ["2024", "2023"]})
   - (search_query: "MEBL sector exposure 2024", metadata_filters: {ticker: "MEBL", filing_type: "annual", filing_period: ["2024", "2023"]})
-→ Intent: "comparison"
+→ Intent: "analysis"
 
 Query: "Analyze HBL performance over the last 4 years"
 → Creates: 6 queries (1 company × 3 statement types × 2 period sets):
@@ -637,13 +630,8 @@ Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment ban
 - Risk profile and capital strength assessment
 - Strategic outlook and investment recommendations
 
-## Ratio Calculation Requirements
-When ratios are explicitly requested in the query:
-- Calculate ALL relevant ratios using data from the provided chunks
-- Show calculation method: "Ratio = Numerator / Denominator"
-- Include both absolute values and percentage changes
-- Compare ratios across companies and time periods
-- Highlight significant differences and trends
+## Banking Ratio Analysis Approach
+{cls.RATIO_ANALYSIS_GUIDANCE}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
@@ -704,7 +692,7 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
         Main method to get appropriate prompt based on intent and context
         
         Args:
-            intent: "statement", "comparison", or "analysis"
+            intent: "statement", "analysis"
             query: Original user query
             companies: List of company tickers
             is_multi_company: Whether multiple companies are involved

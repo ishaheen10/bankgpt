@@ -122,7 +122,7 @@ def save_conversation_context(context: ConversationContext):
 # ─────────────────────────── Data Models ────────────────────────────────
 class QueryPlan(BaseModel):
     companies: List[str] = Field(description="Ticker symbols extracted")
-    intent: str = Field(description="Query intent: statement/analysis/comparison")
+    intent: str = Field(description="Query intent: statement/analysis")
     queries: List[Dict[str, Any]] = Field(description="Structured queries for MCP server")
     confidence: float = Field(description="Parsing confidence 0-1")
     needs_clarification: bool = Field(default=False)
