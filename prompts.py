@@ -17,26 +17,33 @@ class PromptLibrary:
 - Output clean markdown tables directly (NO code blocks or ``` markers)
 - Use proper markdown table syntax with | separators
 - Format numbers with commas for readability (e.g., 1,234,567)
-- Present all financial data in PKR Millions unless otherwise specified
+- Present all financial data using the EXACT currency units as shown in the source documents
 - Always include currency unit and statement type headers like a financial analyst:
   **Balance Sheet as at [Date]**
-  *(PKR in Millions)*
-- Keep currency units consistent throughout the analysis"""
+  *(Currency as presented in source)*
+- Keep currency units consistent with what appears in the retrieved chunks"""
 
     DATA_SOURCE_INSTRUCTIONS = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - Use the filing_period data from the chunks as provided
 - Trust the metadata - filing_period shows what periods are actually available
 - Present the data from the periods that exist in the chunks
-- Use the data from the provided chunks as-is and trust the filing_period metadata"""
+- Use the data from the provided chunks as-is and trust the filing_period metadata
+
+CRITICAL: CONTEXT-GROUNDED ANALYSIS ONLY
+- Only use financial figures, ratios, and information explicitly provided in the retrieved chunks
+- If a specific metric, ratio, or data point is not in the chunks, state "Data not available in provided context"
+- Do not calculate or derive ratios unless the underlying data is clearly present in the chunks
+- Do not use industry benchmarks, averages, or external data not provided in the context
+- All analysis must be traceable back to specific information in the retrieved chunks"""
 
     CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
 Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 
     OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
 
-    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ALWAYS include key banking ratios (ROE, ROA, Capital Adequacy Ratio, Advance-to-Deposit Ratio, NPL ratio, Cost/Income ratio) in your analysis. Include brief insights and trend analysis. NO code blocks."""
+    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
-    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ALWAYS include key banking ratios (ROE, ROA, Capital Adequacy Ratio, Advance-to-Deposit Ratio, NPL ratio, Cost/Income ratio) in your analysis. Include trend analysis, key observations, and strategic implications. NO code blocks."""
+    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
     QUARTERLY_DATA_PRIORITY = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - PRIORITIZE quarterly chunks over annual chunks when available
