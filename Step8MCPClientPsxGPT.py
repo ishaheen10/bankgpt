@@ -1027,6 +1027,10 @@ async def on_message(message: cl.Message):
         complete_response = ""
         reasoning_sections = []
         current_reasoning = ""
+        in_reasoning_phase = False
+        reasoning_buffer = ""
+        reasoning_msg = None
+        final_report_msg = None
         
         async for chunk in stream_formatted_response(
             result["original_query"], 
@@ -1036,8 +1040,44 @@ async def on_message(message: cl.Message):
         ):
             complete_response += chunk
             current_reasoning += chunk
+            reasoning_buffer += chunk
             
-            # Track reasoning sections for chain of thought display
+            # Detect when we enter reasoning phase
+            if "## STEP 1: CONTEXT ANALYSIS" in reasoning_buffer and not in_reasoning_phase:
+                in_reasoning_phase = True
+                # Create a separate reasoning message for chain of thought display
+                reasoning_msg = cl.Message(content="🧠 **Chain of Thought Reasoning:**")
+                await reasoning_msg.send()
+            
+            # Stream reasoning tokens to the appropriate message
+            if in_reasoning_phase:
+                if "**Final Report Structure:**" in reasoning_buffer:
+                    # Reasoning phase is complete, switch to final report
+                    in_reasoning_phase = False
+                    # Create final report message
+                    final_report_msg = cl.Message(content="📊 **Financial Analysis Report:**")
+                    await final_report_msg.send()
+                    # Stream remaining tokens to final report
+                    await final_report_msg.stream_token(chunk)
+                else:
+                    # Still in reasoning phase, stream to reasoning message
+                    await reasoning_msg.stream_token(chunk)
+            else:
+                # Not in reasoning phase - check if we should start reasoning or go to main response
+                if "## STEP 1: CONTEXT ANALYSIS" in reasoning_buffer and not in_reasoning_phase:
+                    # Start reasoning phase
+                    in_reasoning_phase = True
+                    reasoning_msg = cl.Message(content="🧠 **Chain of Thought Reasoning:**")
+                    await reasoning_msg.send()
+                    await reasoning_msg.stream_token(chunk)
+                elif final_report_msg:
+                    # Continue streaming to final report
+                    await final_report_msg.stream_token(chunk)
+                else:
+                    # Stream to main response
+                    await response_msg.stream_token(chunk)
+            
+            # Track completed reasoning sections
             if "## STEP 1: CONTEXT ANALYSIS" in current_reasoning:
                 if "## STEP 2: REPORT STRUCTURE" not in current_reasoning:
                     # Still in STEP 1
@@ -1085,12 +1125,11 @@ async def on_message(message: cl.Message):
                     if step4_content and step4_content not in reasoning_sections:
                         reasoning_sections.append(("Quality Verification", step4_content))
             
-            # Stream the token
-            await response_msg.stream_token(chunk)
-            
-            # Keep current_reasoning manageable
+            # Keep buffers manageable
             if len(current_reasoning) > 2000:
                 current_reasoning = current_reasoning[-1000:]
+            if len(reasoning_buffer) > 3000:
+                reasoning_buffer = reasoning_buffer[-1500:]
         
         # Enhanced step 3 completion
         processing_time = (datetime.now() - start_time).total_seconds()
