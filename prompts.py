@@ -176,6 +176,7 @@ CORE PARSING RULES:
 4. **Search Query**: NEVER create empty search_query - always include company name and key terms
 5. **Combined Requests**: For "statement with notes" requests, generate statement queries; note queries will be added automatically
 6. **Context Resolution**: Use previous messages to resolve ambiguous references
+7. **Broad Analysis Expansion**: For broad analysis queries (ratios, performance, analysis), automatically include key statement types
 
 METADATA SCHEMA:
 - ticker: PSX symbol (e.g., BANK1, BANK2, COMP1, etc.)
@@ -209,6 +210,22 @@ INTENT PRIORITY RULES:
 - If query mentions more than one ticker/company → Use "comparison" intent
 - If query contains "research" keyword → Use "analysis" intent
 - If intent doesn't fall into statement or comparison → Use "analysis" intent
+
+BROAD ANALYSIS QUERY EXPANSION RULES:
+- For broad analysis queries (ratios, performance, financial health, comparison), automatically include key statement types
+- Key statement types for comprehensive analysis: balance_sheet, profit_and_loss, cash_flow
+- For ratio analysis: Include balance sheet (asset/liability ratios), profit & loss (profitability ratios), and cash flow (liquidity ratios)
+- For performance analysis: Include profit & loss (income/expense), balance sheet (asset utilization), and cash flow (cash generation)
+- For financial health: Include balance sheet (solvency), profit & loss (profitability), and cash flow (liquidity)
+- For comprehensive analysis: Also include sector exposure data
+- For multi-company comparisons: Generate separate queries for each company with each statement type and exposure data
+
+BROAD ANALYSIS TRIGGER KEYWORDS:
+- "ratios", "ratio", "performance", "financial health", "financial performance"
+- "key performance indicators", "KPIs", "metrics", "analysis", "compare"
+- "how they did", "performance analysis", "financial analysis"
+- "set of ratios", "financial ratios", "banking ratios"
+- "comprehensive analysis", "full analysis", "complete analysis"
 
 SEARCH QUERY CONSTRUCTION:
 - Always include company name in search_query
@@ -304,6 +321,44 @@ Query: "HBL sector exposure 2024"
 
 Query: "UBL and MCB geographic breakdown Q1 2024"
 → Creates: 2 queries (search_query: "UBL geographic breakdown Q1 2024", metadata_filters: {ticker: "UBL", filing_type: "quarterly", filing_period: ["Q1-2024", "Q1-2023"]}), intent: "analysis"
+
+**LEVEL 7: BROAD ANALYSIS QUERY EXPANSION**
+
+Query: "Get me a set of ratios for FABL and MEBL in 2024"
+→ Creates: 8 queries (2 companies × 3 statement types + 2 exposure queries):
+  **Statement queries (is_statement = "yes"):**
+  - (search_query: "FABL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "FABL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "FABL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "MEBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "MEBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "MEBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
+  **Exposure queries (no metadata filters):**
+  - (search_query: "FABL sector exposure 2024", metadata_filters: {ticker: "FABL", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "MEBL sector exposure 2024", metadata_filters: {ticker: "MEBL", filing_type: "annual", filing_period: ["2024", "2023"]})
+→ Intent: "comparison"
+
+Query: "Analyze HBL performance over the last 4 years"
+→ Creates: 6 queries (1 company × 3 statement types × 2 period sets):
+  **Statement queries (is_statement = "yes"):**
+  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL balance sheet 2022", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2022", "2021"]})
+  - (search_query: "HBL profit and loss 2022", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2022", "2021"]})
+  - (search_query: "HBL cash flow 2022", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2022", "2021"]})
+→ Intent: "analysis"
+
+Query: "Compare UBL performance in 2024 and 2022"
+→ Creates: 6 queries (1 company × 3 statement types × 2 period sets):
+  **Statement queries (is_statement = "yes"):**
+  - (search_query: "UBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "UBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "UBL cash flow 2024", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "UBL balance sheet 2022", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2022", "2021"]})
+  - (search_query: "UBL profit and loss 2022", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2022", "2021"]})
+  - (search_query: "UBL cash flow 2022", metadata_filters: {is_statement: "yes", statement_type: "cash_flow", filing_type: "annual", filing_period: ["2022", "2021"]})
+→ Intent: "analysis"
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
 
