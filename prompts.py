@@ -24,45 +24,51 @@ CONVERSATION CONTEXT HANDLING:
 
 CORE PARSING RULES:
 1. **Query Decomposition**: Multiple companies/periods/statements = separate queries
-2. **Period Handling**: Include filing periods in search_query text (not metadata filters)  
+2. **Period Handling**: Use filing_period in metadata filters with specific format requirements
 3. **Combinatorial Logic**: Create all combinations (2 companies × 2 periods × 2 statements = 8 queries)
 4. **Search Query**: NEVER create empty search_query - always include company name and key terms
 5. **Combined Requests**: For "statement with notes" requests, generate statement queries; note queries will be added automatically
 6. **Context Resolution**: Use previous messages to resolve ambiguous references
-
-METADATA FILTER PRIORITIES (CRITICAL):
-- For "statements/financial statements" → ALWAYS use is_statement = "yes", is_note = "no"
-- For "notes/note breakdown" → ALWAYS use is_statement = "no", is_note = "yes", note_link = "profit_and_loss"
-- For "consolidated/unconsolidated" → Use financial_statement_scope = "consolidated"/"unconsolidated"
-- For statement types → Use statement_type = "balance_sheet"/"profit_and_loss"/etc.
-- For "statements/financial statements" and "notes/note breakdown", is_statement and is_note cannot both be "yes"
 
 METADATA SCHEMA:
 - ticker: PSX symbol (e.g., BANK1, BANK2, COMP1, etc.)
 - statement_type: profit_and_loss|balance_sheet|cash_flow|changes_in_equity|comprehensive_income
 - financial_statement_scope: consolidated|unconsolidated|none
 - filing_type: quarterly|annual
+- filing_period: Must use specific format based on request:
+  - Annual: ["2024", "2023"] or ["2022", "2021"]
+  - Quarterly: ["Q1-2025", "Q1-2024"], ["Q1-2024", "Q1-2023"], ["Q2-2024", "Q2-2023"], ["Q3-2024", "Q3-2023"], 
+              ["Q1-2022", "Q1-2021"], ["Q2-2022", "Q2-2021"], ["Q3-2022", "Q3-2021"]
 - is_statement: "yes" (for financial statements) OR "no" (for notes)
 - is_note: "no" (for statements) OR "yes" (for notes)
-- note_link: profit_and_loss|balance_sheet|cash_flow (ONLY when is_note="yes", NEVER for statements)
+- note_link: profit_and_loss|balance_sheet|cash_flow|changes_in_equity|comprehensive_income (ONLY when is_note="yes", NEVER for statements)
+
+METADATA FILTER PRIORITIES (CRITICAL):
+- For "statements/financial statements" → ALWAYS use is_statement = "yes", is_note = "no"
+- For "notes/note breakdown" → ALWAYS use is_statement = "no", is_note = "yes", note_link = [corresponding statement type]
+- For analytical/exposure queries (NOT statements, NOT notes) → Leave is_statement and is_note blank, only set ticker and filing_period
+- For "consolidated/unconsolidated" → Use financial_statement_scope = "consolidated"/"unconsolidated"
+- For statement types → Use statement_type = "balance_sheet"/"profit_and_loss"/etc.
+- For filing periods → Use filing_period with exact format: if user asks for 2024 annual → ["2024", "2023"], if Q1-2024 → ["Q1-2024", "Q1-2023"], if Q1-2025 → ["Q1-2025", "Q1-2024"]
+- For "statements/financial statements" and "notes/note breakdown", is_statement and is_note cannot both be "yes"
 
 INTENT TYPES:
 - "statement": Raw financial data requests (PRIORITY when statement types mentioned) 
-- "analysis": Insights and trends requests  
-- "comparison": Multi-entity comparisons and side-by-side requests
+- "comparison": Multi-entity comparisons (triggered when more than one ticker mentioned)
+- "analysis": Insights and trends requests OR when "research" keyword appears OR fallback when not statement/comparison
 
 INTENT PRIORITY RULES:
 - If query mentions specific statements (balance sheet, profit and loss, cash flow) → Use "statement" intent unless explicitly asking for analysis
-- If query mentions "side by side", "side-by-side", "compare", "comparison" → Use "comparison" intent
-- Only use "analysis" for queries asking for insights, trends, or analysis without specific comparison
+- If query mentions more than one ticker/company → Use "comparison" intent
+- If query contains "research" keyword → Use "analysis" intent
+- If intent doesn't fall into statement or comparison → Use "analysis" intent
 
 SEARCH QUERY CONSTRUCTION:
 - Always include company name in search_query
 - Add statement type keywords (profit, loss, balance, sheet, cash, flow)
+- For analytical queries: Include analysis keywords (exposure, sector, geographic, lending, risk)
 - Include filing period (2024, Q1, quarterly, annual)
-- Include periods in search_query text (Q1-2024, Q2-2024, etc.), not metadata filters
-- Use filing_type to distinguish quarterly vs annual
-- Example: "[COMPANY] [STATEMENT_TYPE] [PERIOD]" NOT empty string
+- Example: "[COMPANY] [STATEMENT_TYPE] [PERIOD]" OR "[COMPANY] [ANALYSIS_TYPE] [PERIOD]" NOT empty string
 
 CONTEXT-AWARE EXAMPLES:
 Previous query: "UBL and JS Bank 2024 annual balance sheet"
@@ -78,24 +84,79 @@ Follow-up: "I want to see exposure by sector and industry"
 → Infer companies: MCB, NBP; Create queries for sector and industry exposure
 
 STANDARD EXAMPLES:
-Query: "[COMPANY_A] and [COMPANY_B] [YEAR] profit and loss"
-→ Creates: 2 queries (search_query: "[COMPANY_A] profit and loss [YEAR]", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual"}), intent: "statement"
 
-Query: "[COMPANY_A] Q2 2024 profit and loss"
-→ Creates: 1 query (search_query: "[COMPANY_A] profit and loss Q2 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "quarterly"}), intent: "statement"
+**LEVEL 1: SIMPLE (1×1×1 = 1 query)**
+Query: "HBL 2024 balance sheet"
+→ Creates: 1 query (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]}), intent: "statement"
 
-Query: "[COMPANY_A] and [COMPANY_B] side by side profit and loss"
-→ Creates: 2 queries (search_query: "[COMPANY_A] profit and loss", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss"}), intent: "comparison"
+Query: "MCB Q1 2021 profit and loss"
+→ Creates: 1 query (search_query: "MCB profit and loss Q1 2021", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "quarterly", filing_period: ["Q1-2022", "Q1-2021"]}), intent: "statement"
 
-Query: "[COMPANY] balance sheet consolidated [YEAR]" 
-→ Creates: 1 query (search_query: "[COMPANY] balance sheet [YEAR]", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", financial_statement_scope: "consolidated", filing_type: "annual"}), intent: "statement"
+**LEVEL 2: DUAL DIMENSION (2×1×1, 1×2×1, 1×1×2 = 2 queries each)**
+Query: "HBL and UBL 2024 balance sheet"
+→ Creates: 2 queries:
+  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "UBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+→ Intent: "comparison"
 
-Query: "[COMPANY] profit and loss notes [YEAR]"
-→ Creates: 1 query (search_query: "[COMPANY] profit and loss notes [YEAR]", metadata_filters: {is_statement: "no", is_note: "yes", note_link: "profit_and_loss", filing_type: "annual"}), intent: "statement"
+Query: "HBL Q1 2024 and Q2 2024 balance sheet"
+→ Creates: 2 queries:
+  - (search_query: "HBL balance sheet Q1 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q1-2024", "Q1-2023"]})
+  - (search_query: "HBL balance sheet Q2 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q2-2024", "Q2-2023"]})
+→ Intent: "analysis"
 
-Query: "[COMPANY] balance sheet with notes breakdown [YEAR]"
-→ Creates: 1 query (search_query: "[COMPANY] balance sheet [YEAR]", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual"}), intent: "statement"
-→ Note: System automatically adds corresponding note query with note_link = "balance_sheet"
+Query: "HBL 2024 balance sheet and profit and loss"
+→ Creates: 2 queries:
+  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+→ Intent: "statement"
+
+**LEVEL 3: TRIPLE DIMENSION (2×2×1, 2×1×2, 1×2×2 = 4 queries each)**
+Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet"
+→ Creates: 4 queries (2 companies × 2 period sets × 1 statement), intent: "comparison"
+
+Query: "HBL and UBL 2024 balance sheet and profit and loss"
+→ Creates: 4 queries (2 companies × 1 period set × 2 statements), intent: "comparison"
+
+Query: "HBL Q1 2024 and Q2 2024 balance sheet and cash flow"
+→ Creates: 4 queries (1 company × 2 period sets × 2 statements), intent: "analysis"
+
+**LEVEL 4: FULL COMPLEXITY (2×2×2 = 8 queries)**
+Query: "HBL and UBL Q1 2024 and Q2 2024 balance sheet and profit and loss"
+→ Creates: 8 queries (2 companies × 2 period sets × 2 statements), intent: "comparison"
+
+**LEVEL 5: CROSS-PERIOD COMPLEXITY**
+Query: "HBL 2024 and 2022 balance sheet"
+→ Creates: 2 queries using period sets ["2024", "2023"] and ["2022", "2021"], intent: "analysis"
+
+Query: "HBL last 3 quarters balance sheet"
+→ Creates: 3 queries:
+  - (search_query: "HBL balance sheet Q1 2025", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q1-2025", "Q1-2024"]})
+  - (search_query: "HBL balance sheet 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL balance sheet Q3 2024", metadata_filters: {is_statement: "yes", statement_type: "balance_sheet", filing_type: "quarterly", filing_period: ["Q3-2024", "Q3-2023"]})
+→ Intent: "analysis"
+
+**LEVEL 6: NOTES AND ADVANCED COMBINATIONS**
+
+Query: "Get me the profit and loss account for UBL and HBL with full notes breakdown in 2024"
+→ Creates: 4 queries (2 statement queries + 2 note queries):
+  **Statement queries (is_statement = "yes"):**
+  - (search_query: "UBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL profit and loss 2024", metadata_filters: {is_statement: "yes", statement_type: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  **Note queries (is_note = "yes", note_link = "profit_and_loss"):**
+  - (search_query: "UBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+  - (search_query: "HBL profit and loss notes 2024", metadata_filters: {is_note: "yes", note_link: "profit_and_loss", filing_type: "annual", filing_period: ["2024", "2023"]})
+→ Intent: "comparison"
+
+
+Query: "HBL, UBL, and MCB Q1 2024 balance sheet and cash flow with notes"
+→ Creates: 12 queries (3 companies × 1 period set × 2 statements = 6 + 6 note queries), intent: "comparison"
+
+Query: "HBL sector exposure 2024"
+→ Creates: 1 query (search_query: "HBL sector exposure 2024", metadata_filters: {ticker: "HBL", filing_type: "annual", filing_period: ["2024", "2023"]}), intent: "analysis"
+
+Query: "UBL and MCB geographic breakdown Q1 2024"
+→ Creates: 2 queries (search_query: "UBL geographic breakdown Q1 2024", metadata_filters: {ticker: "UBL", filing_type: "quarterly", filing_period: ["Q1-2024", "Q1-2023"]}), intent: "analysis"
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
 
