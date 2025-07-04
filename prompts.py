@@ -20,8 +20,9 @@ class PromptLibrary:
 - Present all financial data using the EXACT currency units as shown in the source documents
 - Always include currency unit and statement type headers like a financial analyst:
   **Balance Sheet as at [Date]**
-  *(Currency as presented in source)*
-- Keep currency units consistent with what appears in the retrieved chunks"""
+  *(Use the exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
+- Keep currency units consistent with what appears in the retrieved chunks
+- PRIORITIZE the currency format that appears in the source documents over generic labels"""
 
     DATA_SOURCE_INSTRUCTIONS = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - Use the filing_period data from the chunks as provided
@@ -34,7 +35,15 @@ CRITICAL: CONTEXT-GROUNDED ANALYSIS ONLY
 - If a specific metric, ratio, or data point is not in the chunks, state "Data not available in provided context"
 - Do not calculate or derive ratios unless the underlying data is clearly present in the chunks
 - Do not use industry benchmarks, averages, or external data not provided in the context
-- All analysis must be traceable back to specific information in the retrieved chunks"""
+- All analysis must be traceable back to specific information in the retrieved chunks
+
+CURRENCY FORMAT REQUIREMENTS:
+- Use the EXACT currency format that appears in the source documents (PKR 000s, PKR MM, PKR Millions, etc.)
+- Do NOT use generic labels like "Currency as presented in source"
+- Look for specific currency indicators in the source data and use those exact formats
+- If source shows "PKR 000s", use "PKR 000s" in your headers
+- If source shows "PKR MM", use "PKR MM" in your headers
+- If source shows "PKR Millions", use "PKR Millions" in your headers"""
 
     CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
 Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
@@ -334,8 +343,17 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
     @classmethod
     def get_statement_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
                            is_quarterly_comparison: bool, is_side_by_side: bool, 
-                           needs_q4_calculation: bool) -> str:
+                           needs_q4_calculation: bool, financial_statement_scope: str = None) -> str:
         """Generate statement analysis prompt based on context"""
+        
+        # Determine scope label
+        scope_label = financial_statement_scope if financial_statement_scope else "unconsolidated"
+        if scope_label == "consolidated":
+            scope_display = "Consolidated"
+        elif scope_label == "unconsolidated":
+            scope_display = "Unconsolidated"
+        else:
+            scope_display = "Unconsolidated"  # Default
         
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
         
@@ -360,9 +378,9 @@ You are generating a multi-company quarterly financial statement comparison for:
 REQUIRED STRUCTURE - MULTI-COMPANY QUARTERLY ANALYSIS:
 Use the templates below to create compelling tables that show:
 
-## {', '.join(companies_set)} - Quarterly Performance Analysis
+## {', '.join(companies_set)} - Quarterly Performance Analysis ({scope_display})
 **Quarterly Statement Analysis**
-*(Currency units as reported in source documents)*
+*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
@@ -392,9 +410,9 @@ You are generating a side-by-side financial statement comparison for: {query}
 REQUIRED STRUCTURE - COMPREHENSIVE BANKING COMPARISON:
 Use BANKING_TABLE_EXAMPLES and COMPARATIVE_ANALYSIS_TEMPLATES to create professional analysis:
 
-## {', '.join(companies_set)} - Comprehensive Financial Analysis
+## {', '.join(companies_set)} - Comprehensive Financial Analysis ({scope_display})
 **Statement Analysis for the periods shown in the data**
-*(Currency units as reported in source documents)*
+*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
 
 {cls.BANKING_TABLE_EXAMPLES}
 
@@ -430,9 +448,9 @@ You are generating quarterly financial statement data for: {query}
 STRUCTURE - QUARTERLY PERFORMANCE ANALYSIS:
 Use QUARTERLY_TREND_TEMPLATES and BANKING_TABLE_EXAMPLES for comprehensive analysis:
 
-## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive
+## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive ({scope_display})
 **Quarterly Statement of Financial Position**
-*(Currency units as reported in source documents)*
+*(Use exact currency format from source: PKR 000s, PKR MM, PKR Millions, etc.)*
 
 {cls.QUARTERLY_TREND_TEMPLATES}
 
@@ -489,8 +507,18 @@ Present the financial statement data in clean markdown table format. NO code blo
 
     @classmethod
     def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
-                          is_quarterly_comparison: bool, needs_q4_calculation: bool) -> str:
+                          is_quarterly_comparison: bool, needs_q4_calculation: bool, 
+                          financial_statement_scope: str = None) -> str:
         """Generate comprehensive analysis prompt for all non-statement requests"""
+        
+        # Determine scope label
+        scope_label = financial_statement_scope if financial_statement_scope else "unconsolidated"
+        if scope_label == "consolidated":
+            scope_display = "Consolidated"
+        elif scope_label == "unconsolidated":
+            scope_display = "Unconsolidated"
+        else:
+            scope_display = "Unconsolidated"  # Default
         
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
         companies_set = set(companies)
@@ -542,7 +570,7 @@ STRUCTURE - COMPREHENSIVE MULTI-COMPANY ANALYSIS:
 Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
 
 ## Multi-Company Financial Analysis
-**{', '.join(companies_set)} - Comprehensive Performance Analysis**
+**{', '.join(companies_set)} - Comprehensive Performance Analysis ({scope_display})**
 
 {cls.COMPARATIVE_ANALYSIS_TEMPLATES}
 
@@ -615,7 +643,8 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
     @classmethod
     def get_prompt_for_intent(cls, intent: str, query: str, companies: List[str], 
                             is_multi_company: bool, is_quarterly_comparison: bool, 
-                            is_side_by_side: bool, needs_q4_calculation: bool) -> str:
+                            is_side_by_side: bool, needs_q4_calculation: bool, 
+                            financial_statement_scope: str = None) -> str:
         """
         Main method to get appropriate prompt based on intent and context
         
@@ -627,6 +656,7 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
             is_quarterly_comparison: Whether quarterly data is requested
             is_side_by_side: Whether this is a statement request (simplified logic)
             needs_q4_calculation: Whether Q4 calculation is needed
+            financial_statement_scope: "consolidated", "unconsolidated", or None (defaults to "unconsolidated")
         """
         
         # Simplified routing logic: Check if this is a pure statement request
@@ -638,11 +668,12 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
         if is_statement_request:
             return cls.get_statement_prompt(query, companies, is_multi_company, 
                                           is_quarterly_comparison, is_side_by_side, 
-                                          needs_q4_calculation)
+                                          needs_q4_calculation, financial_statement_scope)
         else:
             # Everything else gets comprehensive analysis (including ratios)
             return cls.get_analysis_prompt(query, companies, is_multi_company, 
-                                         is_quarterly_comparison, needs_q4_calculation)
+                                         is_quarterly_comparison, needs_q4_calculation, 
+                                         financial_statement_scope)
 
     @classmethod
     def get_parsing_user_prompt(cls, user_query: str, bank_tickers: List[str], 
