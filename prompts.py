@@ -849,14 +849,24 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
         ])
         
         if is_statement_request:
-            return cls.get_statement_prompt(query, companies, is_multi_company, 
+            prompt = cls.get_statement_prompt(query, companies, is_multi_company, 
                                           is_quarterly_comparison, is_side_by_side, 
                                           needs_q4_calculation, financial_statement_scope)
         else:
             # Everything else gets comprehensive analysis (including ratios)
-            return cls.get_analysis_prompt(query, companies, is_multi_company, 
+            prompt = cls.get_analysis_prompt(query, companies, is_multi_company, 
                                          is_quarterly_comparison, needs_q4_calculation, 
                                          financial_statement_scope)
+        
+        # Format the placeholders in the prompt
+        prompt = prompt.format(
+            cls=cls,
+            RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
+            REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
+            CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
+        )
+        
+        return prompt
 
     @classmethod
     def get_parsing_user_prompt(cls, user_query: str, bank_tickers: List[str], 
