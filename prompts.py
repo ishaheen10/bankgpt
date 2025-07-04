@@ -10,6 +10,117 @@ class PromptLibrary:
     """Centralized prompt management for PSX Financial Assistant"""
     
     # ═══════════════════════════════════════════════════════════════════════
+    # COMMON INSTRUCTION BLOCKS - Reusable components
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    FORMATTING_REQUIREMENTS = """CRITICAL FORMATTING REQUIREMENTS:
+- Output clean markdown tables directly (NO code blocks or ``` markers)
+- Use proper markdown table syntax with | separators
+- Format numbers with commas for readability (e.g., 1,234,567)
+- Present all financial data in PKR Millions unless otherwise specified
+- Always include currency unit and statement type headers like a financial analyst:
+  **Balance Sheet as at [Date]**
+  *(PKR in Millions)*
+- Keep currency units consistent throughout the analysis"""
+
+    DATA_SOURCE_INSTRUCTIONS = """IMPORTANT DATA SOURCE INSTRUCTIONS:
+- Use the filing_period data from the chunks as provided
+- Trust the metadata - filing_period shows what periods are actually available
+- Present the data from the periods that exist in the chunks
+- Use the data from the provided chunks as-is and trust the filing_period metadata"""
+
+    CHUNK_TRACKING_INSTRUCTIONS = """At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
+Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
+
+    OUTPUT_FORMAT_STATEMENT = """Present ONLY the financial statement data in clean markdown tables. NO explanatory text, NO code blocks, just the data tables."""
+
+    OUTPUT_FORMAT_COMPARISON = """Present financial data in clean markdown tables WITH comparative analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ALWAYS include key banking ratios (ROE, ROA, Capital Adequacy Ratio, Advance-to-Deposit Ratio, NPL ratio, Cost/Income ratio) in your analysis. Include brief insights and trend analysis. NO code blocks."""
+
+    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. ALWAYS include key banking ratios (ROE, ROA, Capital Adequacy Ratio, Advance-to-Deposit Ratio, NPL ratio, Cost/Income ratio) in your analysis. Include trend analysis, key observations, and strategic implications. NO code blocks."""
+
+    QUARTERLY_DATA_PRIORITY = """IMPORTANT DATA SOURCE INSTRUCTIONS:
+- PRIORITIZE quarterly chunks over annual chunks when available
+- Look for Q1, Q2, Q3 data in the chunks with filing_period metadata
+- Use quarterly chunks that contain comparative data (e.g., "Q1-2024 & Q1-2023")
+- Extract the specific year's quarterly data from these comparative chunks
+- If you have both quarterly and annual data, use the quarterly chunks for detailed quarterly breakdown"""
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # COMPELLING TABLE TEMPLATES - Banking-focused examples
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    BANKING_TABLE_EXAMPLES = """
+COMPREHENSIVE BANKING ANALYSIS TABLES:
+
+**Key Balance Sheet Items:**
+| Line Item | Current | Previous | YoY Growth | Industry Avg |
+|-----------|---------|----------|------------|--------------|
+| Total Assets | 2,847,123 | 2,654,891 | +7.2% | +5.8% |
+| Customer Deposits | 2,234,567 | 2,089,432 | +6.9% | +6.1% |
+| Advances (Gross) | 1,567,890 | 1,432,110 | +9.5% | +8.2% |
+| Shareholders' Equity | 287,654 | 267,123 | +7.7% | +6.8% |
+
+**Key P&L Performance:**
+| Metric | Current | Previous | Change | ROE Impact |
+|--------|---------|----------|--------|------------|
+| Net Interest Income | 156,789 | 142,567 | +10.0% | +2.1% |
+| Non-Interest Income | 45,678 | 41,234 | +10.8% | +0.6% |
+| Operating Expenses | 89,456 | 84,123 | +6.3% | -0.8% |
+| Net Profit | 78,901 | 71,234 | +10.8% | +1.9% |
+
+**Banking Ratios & Metrics:**
+| Ratio | Current | Previous | Trend | Benchmark |
+|-------|---------|----------|-------|-----------|
+| ROE (%) | 18.2 | 17.1 | ↗ | 16.5 |
+| ROA (%) | 2.8 | 2.7 | ↗ | 2.5 |
+| Capital Adequacy Ratio (%) | 16.8 | 16.2 | ↗ | >11.5 |
+| Advance-to-Deposit Ratio (%) | 70.2 | 68.6 | ↗ | 65-75 |
+| Cost/Income (%) | 44.3 | 45.1 | ↘ | <45 |
+| NPL Ratio (%) | 2.1 | 2.3 | ↘ | <3.0 |
+
+Use these comprehensive examples as templates, adapting the specific metrics based on the actual query and available data."""
+
+    QUARTERLY_TREND_TEMPLATES = """
+QUARTERLY PROGRESSION ANALYSIS:
+
+**Quarterly Performance Tracking:**
+| Metric | Q1 | Q2 | Q3 | Q4* | Trend | Growth |
+|--------|----|----|----|----|-------|--------|
+| Net Interest Income | 38,567 | 39,123 | 40,234 | 38,865 | ↗ | +0.8% |
+| Customer Deposits | 2,156,789 | 2,189,456 | 2,234,567 | 2,267,123 | ↗ | +5.1% |
+| Advances | 1,467,890 | 1,501,234 | 1,534,567 | 1,567,890 | ↗ | +6.8% |
+| ROE (%) | 17.8 | 18.1 | 18.4 | 18.2 | ↗ | +0.4pp |
+
+*Q4 = Calculated (Annual - Q3), ROE = Return on Equity*
+
+**Seasonal Patterns:**
+| Business Line | Q1 | Q2 | Q3 | Q4 | Peak Quarter |
+|---------------|----|----|----|----|--------------|
+| Corporate Banking | 145 | 156 | 167 | 178 | Q4 |
+| Consumer Banking | 234 | 267 | 289 | 245 | Q3 |
+| Treasury Operations | 67 | 71 | 69 | 73 | Q4 |"""
+
+    COMPARATIVE_ANALYSIS_TEMPLATES = """
+MULTI-BANK COMPETITIVE ANALYSIS:
+
+**Peer Comparison Matrix:**
+| Bank | Assets | ROE | ROA | CAR | ADR | NPL | Market Share |
+|------|--------|-----|-----|-----|-----|-----|--------------|
+| [Bank A] | 2,847 | 18.2% | 2.8% | 16.8% | 70.2% | 2.1% | 12.4% |
+| [Bank B] | 3,156 | 16.9% | 2.6% | 15.9% | 68.7% | 2.8% | 13.8% |
+| [Bank C] | 2,234 | 19.1% | 3.1% | 17.2% | 72.1% | 1.9% | 9.7% |
+| Industry Avg | 2,746 | 17.8% | 2.7% | 16.3% | 69.8% | 2.4% | - |
+
+*CAR = Capital Adequacy Ratio, ADR = Advance-to-Deposit Ratio*
+
+**Performance Ranking:**
+| Metric | Best Performer | 2nd | 3rd | Industry Position |
+|--------|----------------|-----|-----|-------------------|
+| ROE | [Bank C] (19.1%) | [Bank A] (18.2%) | [Bank B] (16.9%) | Above Average |
+| Asset Quality | [Bank C] (1.9%) | [Bank A] (2.1%) | [Bank B] (2.8%) | Top Quartile |
+| Efficiency | [Bank A] (44.3%) | [Bank B] (46.1%) | [Bank C] (47.8%) | Industry Leader |"""
+
+    # ═══════════════════════════════════════════════════════════════════════
     # PARSING PROMPTS - For Claude 3.5 Haiku Query Understanding
     # ═══════════════════════════════════════════════════════════════════════
     
@@ -213,83 +324,69 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
                 return f"""
 You are generating a multi-company quarterly financial statement comparison for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create ONE comprehensive quarterly comparison table with companies as columns
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
-- Keep currency units consistent
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- PRIORITIZE quarterly chunks over annual chunks when available
-- Look for Q1, Q2, Q3 data in the chunks with filing_period metadata
-- Use quarterly chunks that contain comparative data (e.g., "Q1-2024 & Q1-2023")
-- Extract the specific year's quarterly data from these comparative chunks
-- If you have both quarterly and annual data, use the quarterly chunks for detailed quarterly breakdown
+{cls.QUARTERLY_DATA_PRIORITY}
 
-REQUIRED STRUCTURE FOR QUARTERLY MULTI-COMPANY COMPARISON:
-## {', '.join(companies_set)} - Quarterly Balance Sheet Comparison
+REQUIRED STRUCTURE - MULTI-COMPANY QUARTERLY ANALYSIS:
+Use the templates below to create compelling tables that show:
+
+## {', '.join(companies_set)} - Quarterly Performance Analysis
 **Quarterly Statement Analysis**
-*(Rupees in '000)*
+*(PKR in Millions)*
 
-| Line Item | {list(companies_set)[0] if len(companies_set) > 0 else 'Company A'} Q1 | {list(companies_set)[0] if len(companies_set) > 0 else 'Company A'} Q2 | {list(companies_set)[0] if len(companies_set) > 0 else 'Company A'} Q3 | {list(companies_set)[1] if len(companies_set) > 1 else 'Company B'} Q1 | {list(companies_set)[1] if len(companies_set) > 1 else 'Company B'} Q2 | {list(companies_set)[1] if len(companies_set) > 1 else 'Company B'} Q3 |
-|-----------|-------------|-------------|-------------|-------------|-------------|-------------|
-| Total Assets | 123,456 | 234,567 | 345,678 | 987,654 | 876,543 | 765,432 |
-| Total Liabilities | 100,000 | 200,000 | 300,000 | 900,000 | 800,000 | 700,000 |
-| Total Equity | 23,456 | 34,567 | 45,678 | 87,654 | 76,543 | 65,432 |
-| ... | ... | ... | ... | ... | ... | ... |
+{cls.QUARTERLY_TREND_TEMPLATES}
 
-**Key Highlights:**
-- Quarterly trends for each company
-- Comparative analysis between companies
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+
+**Key Investment Banking Analysis:**
+- Quarter-over-quarter performance momentum
+- Competitive positioning vs peers
+- Key performance driver identification
+- Risk/return profile assessment
 
 CRITICAL: Use the quarterly data chunks (those with Q1, Q2, Q3 periods) rather than annual chunks. The quarterly chunks contain the detailed quarterly breakdowns we need.
 
-At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
-Used Chunks: [list only the chunk IDs/numbers that were actually used]
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-Present ONLY the quarterly financial statement data in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_STATEMENT}
 """
             else:
                 # Regular multi-company annual comparison
                 return f"""
 You are generating a side-by-side financial statement comparison for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create ONE comprehensive side-by-side comparison table with companies as columns
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
-- Keep currency units consistent
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-REQUIRED STRUCTURE FOR SIDE-BY-SIDE COMPARISON:
-## {', '.join(companies_set)} - Balance Sheet Comparison
-**Statement for the periods shown in the data**
-*(Rupees in '000)*
+REQUIRED STRUCTURE - COMPREHENSIVE BANKING COMPARISON:
+Use BANKING_TABLE_EXAMPLES and COMPARATIVE_ANALYSIS_TEMPLATES to create professional analysis:
 
-| Line Item | Company A | Company B | Company A Previous | Company B Previous |
-|-----------|-------------|-------------|-------------|-------------|
-| Assets | 1,234,567 | 2,345,678 | 1,123,456 | 2,234,567 |
-| Liabilities | 1,000,000 | 2,000,000 | 900,000 | 1,800,000 |
-| Equity | 234,567 | 345,678 | 223,456 | 434,567 |
-| ... | ... | ... | ... | ... |
+## {', '.join(companies_set)} - Comprehensive Financial Analysis
+**Statement Analysis for the periods shown in the data**
+*(PKR in Millions)*
 
-**Key Highlights:**
-- Brief comparison points
+{cls.BANKING_TABLE_EXAMPLES}
+
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+
+**Investment Banking Insights:**
+- Competitive advantage analysis
+- Financial performance drivers
+- Risk assessment and positioning
+- Strategic implications and outlook
 
 IMPORTANT: 
 - Create a SINGLE side-by-side table with all companies as columns
 - Use the ACTUAL data from the provided chunks (trust the filing_period metadata)
 - Track which data chunks you actually use in your response
 
-At the end, list ONLY the chunk IDs that you actually referenced in creating this analysis.
-Used Chunks: [list only the chunk IDs/numbers that were actually used]
+{cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-Present ONLY the financial statement data in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_STATEMENT}
 """
         
         # Quarterly comparison for single company
@@ -297,33 +394,27 @@ Present ONLY the financial statement data in clean markdown format. NO code bloc
             return f"""
 You are generating quarterly financial statement data for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)  
-- Create side-by-side quarterly comparison with quarters as columns
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the filing_period data from the chunks as provided
-- Trust the metadata - filing_period shows what periods are actually available
-- Present the data from the periods that exist in the chunks
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE:
-## {companies[0] if companies else 'Company'} - Quarterly Balance Sheet Analysis
+STRUCTURE - QUARTERLY PERFORMANCE ANALYSIS:
+Use QUARTERLY_TREND_TEMPLATES and BANKING_TABLE_EXAMPLES for comprehensive analysis:
+
+## {companies[0] if companies else 'Company'} - Quarterly Performance Deep-Dive
 **Quarterly Statement of Financial Position**
-*(Rupees in '000)*
+*(PKR in Millions)*
 
-| Line Item | Q1 | Q2 | Q3 | Q4 (calculated) | Previous Year |
-|-----------|---------|---------|---------|---------|---------|
-| Total Assets | 123,456 | 234,567 | 567,890 | [Q4 calc] | 432,110 |
-| ... | ... | ... | ... | ... | ... |
+{cls.QUARTERLY_TREND_TEMPLATES}
+
+{cls.BANKING_TABLE_EXAMPLES}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present ONLY the quarterly or annual data in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_STATEMENT}
 """
         
         # Multi-company quarterly comparison
@@ -331,31 +422,25 @@ Present ONLY the quarterly or annual data in clean markdown format. NO code bloc
             return f"""
 You are generating financial statement data for multiple companies: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create ONE side-by-side comparison table with companies as columns
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the filing_period data from the chunks as provided
-- Trust the metadata - present the data from the periods that exist
-- Create tables based on what periods are actually available in the data
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE:
+STRUCTURE - MULTI-COMPANY FINANCIAL ANALYSIS:
+Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for professional presentation:
+
 ## Multi-Company Financial Statement Comparison
 
-| Line Item | Company A | Company B | Company A Previous | Company B Previous |
-|-----------|--------|--------|--------|--------|
-| Total Assets | 123,456 | 234,567 | 234,567 | 345,678 |
-| ... | ... | ... | ... | ... |
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+
+{cls.BANKING_TABLE_EXAMPLES}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present ONLY the financial data in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_STATEMENT}
 """
         
         # Single company statement
@@ -363,17 +448,11 @@ Present ONLY the financial data in clean markdown format. NO code blocks.
             return f"""
 You are generating financial statement data for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Use proper markdown table syntax with | separators  
-- Format numbers with commas for readability
-- Include clear headers and structure
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the data from the provided chunks as-is
-- Trust the filing_period metadata
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
@@ -393,33 +472,32 @@ Present the financial statement data in clean markdown table format. NO code blo
             return f"""
 You are creating a quarterly comparative analysis for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create side-by-side quarterly comparison tables
-- Use proper markdown table syntax with | separators
-- Format numbers with commas and include percentage changes
+{cls.FORMATTING_REQUIREMENTS}
+- Show trends and growth patterns
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the filing_period data from the chunks as provided
-- Trust the metadata for what periods are available
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE:
+STRUCTURE - QUARTERLY COMPARATIVE ANALYSIS:
+Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
+
 ## Quarterly Performance Comparison
 
-| Line Item | Q1 | Q2 | Q3 | Q1 vs Q3 Change |
-|-----------|---------|---------|---------|-----------------|
-| Total Assets | 123,456 | 234,567 | 567,890 | +360.9% |
-| ... | ... | ... | ... | ... |
+{cls.QUARTERLY_TREND_TEMPLATES}
 
-## Key Quarterly Insights
-- Brief analysis points based on actual data trends
+{cls.BANKING_TABLE_EXAMPLES}
+
+## Investment Banking Quarterly Insights
+- Seasonality patterns and business cycle analysis
+- Growth momentum and trend sustainability  
+- Performance drivers and operational efficiency
+- Quarterly volatility and risk assessment
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present data in clean markdown format with analysis. NO code blocks.
+{cls.OUTPUT_FORMAT_COMPARISON}
 """
         else:
             return f"""
@@ -427,34 +505,32 @@ You are creating a side-by-side comparative analysis for: {query}
 
 Companies involved: {', '.join(companies_set)}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create ONE comprehensive side-by-side comparison table
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the data from the provided chunks as-is
-- Trust the filing_period metadata
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
-STRUCTURE:
+STRUCTURE - SIDE-BY-SIDE COMPETITIVE ANALYSIS:
+Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
+
 ## Side-by-Side Financial Comparison
-**{', '.join(companies_set)} - Performance**
+**{', '.join(companies_set)} - Comprehensive Performance Analysis**
 
-| Line Item | {companies[0] if len(companies) > 0 else 'Company A'} | {companies[1] if len(companies) > 1 else 'Company B'} | Difference |
-|-----------|-----------|-----------|------------|
-| Total Assets | 123,456 | 234,567 | +90.0% |
-| ... | ... | ... | ... |
+{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
 
-## Key Insights
-- Analysis points
+{cls.BANKING_TABLE_EXAMPLES}
+
+## Investment Banking Key Insights
+- Competitive positioning and market share analysis
+- Financial performance and operational efficiency comparison
+- Risk profile and capital strength assessment
+- Strategic outlook and investment recommendations
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present data in clean markdown format with analysis. NO code blocks.
+{cls.OUTPUT_FORMAT_COMPARISON}
 """
 
     @classmethod
@@ -470,37 +546,27 @@ You are analyzing financial data for multiple companies: {query}
 
 Companies: {', '.join(set(companies))}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the data from the provided chunks as-is
-- Trust the filing_period metadata
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-Present comprehensive analysis with supporting data tables in clean markdown format. NO code blocks.
+{cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}
 """
         elif is_quarterly_comparison:
             return f"""
 You are analyzing quarterly financial performance for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Create quarterly performance tables
-- Use proper markdown table syntax with | separators  
+{cls.FORMATTING_REQUIREMENTS}
 - Show trends and growth patterns
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the filing_period data from the chunks as provided
-- Trust the metadata for what periods are available
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
@@ -511,16 +577,11 @@ Present quarterly analysis with data tables in clean markdown format. NO code bl
             return f"""
 You are analyzing financial data for: {query}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Output clean markdown tables directly (NO code blocks or ``` markers)
-- Use proper markdown table syntax with | separators
-- Format numbers with commas for readability
+{cls.FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-IMPORTANT DATA SOURCE INSTRUCTIONS:
-- Use the data from the provided chunks as-is
-- Trust the filing_period metadata
+{cls.DATA_SOURCE_INSTRUCTIONS}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]

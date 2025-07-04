@@ -1,6 +1,6 @@
 """
 PSX Financial Client - Enhanced Intelligence & Orchestration Layer
-Handles natural language parsing with Claude 3.5 Haiku and orchestrates MCP server calls.
+Handles natural language parsing with Claude 4 Sonnet and orchestrates MCP server calls.
 Enhanced with improved error handling, logging, and user experience.
 
 Flow: User Query → Claude Parsing → Query Execution → Response Synthesis
@@ -61,7 +61,7 @@ anthropic_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY, timeout=6
 
 # Google GenAI for streaming responses (proven working configuration)
 from llama_index.llms.google_genai import GoogleGenAI
-streaming_llm = GoogleGenAI(model="models/gemini-2.5-flash-preview-04-17", api_key=GEMINI_API_KEY, temperature=0.3)
+streaming_llm = GoogleGenAI(model="models/gemini-2.5-pro", api_key=GEMINI_API_KEY, temperature=0.3)
 
 # Import prompts library
 from prompts import prompts
@@ -277,7 +277,7 @@ def find_best_ticker_match(query_ticker: str) -> str:
     return query_ticker
 
 async def parse_query_with_claude(user_query: str, conversation_context: Optional[ConversationContext] = None) -> QueryPlan:
-    """Use Claude 3.5 Haiku to parse user query into structured query plan with conversation context"""
+    """Use Claude 4 Sonnet to parse user query into structured query plan with conversation context"""
     log.info(f"Parsing query with Claude: {user_query[:100]}...")
     
     # Create ticker context for Claude - only banks
@@ -302,8 +302,8 @@ async def parse_query_with_claude(user_query: str, conversation_context: Optiona
 
     try:
         response = await anthropic_client.messages.create(
-            model="claude-3-5-haiku-20241022",
-            max_tokens=2000,
+            model="claude-4-sonnet-20250514",
+            max_tokens=4000,
             temperature=0.1,
             system=prompts.PARSING_SYSTEM_PROMPT,
             messages=messages,  # Use Claude's native message format
@@ -896,6 +896,8 @@ async def welcome_message():
             "2. Under **Type*** click the dropdown and select **sse**\n"
             "3. Paste the URL above and set **Name** as **BankGPT**\n"
             "4. Click **Confirm** to connect\n\n"
+            "5. Tickers included: ABL, BAFL, BAHL, BIPL, FABL, HBL, HMB, MCP, MEBL and UBL. \n\n"
+            "6. For best results, always specify ticker and time period (e.g. 2022, Q1-2024, last 6 quarters)\n\n"
         )
     ).send()
 
