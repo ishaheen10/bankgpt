@@ -110,9 +110,9 @@ Used Chunks: [list only the chunk IDs/numbers that were actually used]"""
 **Final Report Structure:**
 [Present the complete report with all sections]"""
 
-    REPORT_STRUCTURE_TEMPLATE = """REPORT STRUCTURE REQUIREMENTS:
+    REPORT_STRUCTURE_TEMPLATE = """CRITICAL REPORT STRUCTURE REQUIREMENTS:
 
-After the Executive Summary, describe how you will structure the report:
+MANDATORY: After the Executive Summary, you MUST include this section breakdown before proceeding with the detailed analysis:
 
 **This report is divided into:**
 
@@ -137,7 +137,7 @@ After the Executive Summary, describe how you will structure the report:
 - Comparative analysis (if multiple companies)
 - Investment insights and strategic implications
 
-Let the analysis requirements guide your section structure, but always provide this upfront overview."""
+IMPORTANT: You MUST provide this section overview immediately after the Executive Summary. Do not skip this step. Then proceed to write each section with the exact section headers you outlined."""
 
     ENHANCED_REASONING_FRAMEWORK = """ADVANCED REASONING APPROACH - Use this for complex analysis:
 
@@ -162,21 +162,21 @@ Let the analysis requirements guide your section structure, but always provide t
 
     OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-{cls.RATIO_ANALYSIS_GUIDANCE}
+{RATIO_ANALYSIS_GUIDANCE}
 
-{cls.REPORT_STRUCTURE_TEMPLATE}
+{REPORT_STRUCTURE_TEMPLATE}
 
-{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
+{CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
     OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-{cls.RATIO_ANALYSIS_GUIDANCE}
+{RATIO_ANALYSIS_GUIDANCE}
 
-{cls.REPORT_STRUCTURE_TEMPLATE}
+{REPORT_STRUCTURE_TEMPLATE}
 
-{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
+{CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
@@ -677,12 +677,22 @@ and using ONLY the following context which was retrieved from financial reports:
 [chunks]
 """
 
+        print("\n[DEBUG] Prompt after initial construction:\n" + (prompt[:500] + '...'))
+        print("\n[DEBUG] Full prompt after initial construction:")
+        print(prompt)
+        print("\n[DEBUG] Looking for placeholders:")
+        print("Contains {OUTPUT_FORMAT_ANALYSIS}:", "{OUTPUT_FORMAT_ANALYSIS}" in prompt)
+        print("Contains {RATIO_ANALYSIS_GUIDANCE}:", "{RATIO_ANALYSIS_GUIDANCE}" in prompt)
+        print("Contains {REPORT_STRUCTURE_TEMPLATE}:", "{REPORT_STRUCTURE_TEMPLATE}" in prompt)
+        print("Contains {CHAIN_OF_THOUGHT_INSTRUCTIONS}:", "{CHAIN_OF_THOUGHT_INSTRUCTIONS}" in prompt)
+
+        return prompt
+
     @classmethod
     def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
                           is_quarterly_comparison: bool, needs_q4_calculation: bool, 
                           financial_statement_scope: str = None) -> str:
         """Generate comprehensive analysis prompt for all non-statement requests"""
-        
         # Determine scope label
         scope_label = financial_statement_scope if financial_statement_scope else "unconsolidated"
         if scope_label == "consolidated":
@@ -696,26 +706,26 @@ and using ONLY the following context which was retrieved from financial reports:
         companies_set = set(companies)
         
         if is_quarterly_comparison:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+            return """
+{EQUITY_RESEARCH_ANALYST_FRAMING}
 
-{cls.FORMATTING_REQUIREMENTS}
+{FORMATTING_REQUIREMENTS}
 - Show trends and growth patterns
 
 {q4_instructions}
 
-{cls.DATA_SOURCE_INSTRUCTIONS}
+{DATA_SOURCE_INSTRUCTIONS}
 
-{cls.ENHANCED_REASONING_FRAMEWORK}
+{ENHANCED_REASONING_FRAMEWORK}
 
 STRUCTURE - QUARTERLY COMPARATIVE ANALYSIS:
 Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
 
 ## Quarterly Performance Comparison
 
-{cls.QUARTERLY_TREND_TEMPLATES}
+{QUARTERLY_TREND_TEMPLATES}
 
-{cls.BANKING_TABLE_EXAMPLES}
+{BANKING_TABLE_EXAMPLES}
 
 ## Investment Banking Quarterly Insights
 - Seasonality patterns and business cycle analysis
@@ -726,35 +736,44 @@ Use QUARTERLY_TREND_TEMPLATES for sophisticated quarterly analysis:
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-{cls.OUTPUT_FORMAT_ANALYSIS}
+{OUTPUT_FORMAT_ANALYSIS}
 
 and using ONLY the following context which was retrieved from financial reports:
 
 [chunks]
-"""
+""".format(
+                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
+                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
+                q4_instructions=q4_instructions,
+                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
+                ENHANCED_REASONING_FRAMEWORK=cls.ENHANCED_REASONING_FRAMEWORK,
+                QUARTERLY_TREND_TEMPLATES=cls.QUARTERLY_TREND_TEMPLATES,
+                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
+                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
+            )
         elif is_multi_company:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+            return """
+{EQUITY_RESEARCH_ANALYST_FRAMING}
 
-Companies involved: {', '.join(companies_set)}
+Companies involved: {companies}
 
-{cls.FORMATTING_REQUIREMENTS}
+{FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-{cls.DATA_SOURCE_INSTRUCTIONS}
+{DATA_SOURCE_INSTRUCTIONS}
 
-{cls.ENHANCED_REASONING_FRAMEWORK}
+{ENHANCED_REASONING_FRAMEWORK}
 
 STRUCTURE - COMPREHENSIVE MULTI-COMPANY ANALYSIS:
 Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment banking quality analysis:
 
 ## Multi-Company Financial Analysis
-**{', '.join(companies_set)} - Comprehensive Performance Analysis ({scope_display})**
+**{companies} - Comprehensive Performance Analysis ({scope_display})**
 
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
+{COMPARATIVE_ANALYSIS_TEMPLATES}
 
-{cls.BANKING_TABLE_EXAMPLES}
+{BANKING_TABLE_EXAMPLES}
 
 ## Investment Banking Key Insights
 - Competitive positioning and market share analysis
@@ -763,33 +782,45 @@ Use COMPARATIVE_ANALYSIS_TEMPLATES and BANKING_TABLE_EXAMPLES for investment ban
 - Strategic outlook and investment recommendations
 
 ## Banking Ratio Analysis Approach
-{cls.RATIO_ANALYSIS_GUIDANCE}
+{RATIO_ANALYSIS_GUIDANCE}
 
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-{cls.OUTPUT_FORMAT_ANALYSIS}
+{OUTPUT_FORMAT_ANALYSIS}
 
 and using ONLY the following context which was retrieved from financial reports:
 
 [chunks]
-"""
+""".format(
+                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
+                companies=", ".join(companies_set),
+                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
+                q4_instructions=q4_instructions,
+                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
+                ENHANCED_REASONING_FRAMEWORK=cls.ENHANCED_REASONING_FRAMEWORK,
+                scope_display=scope_display,
+                COMPARATIVE_ANALYSIS_TEMPLATES=cls.COMPARATIVE_ANALYSIS_TEMPLATES,
+                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
+                RATIO_ANALYSIS_GUIDANCE="{RATIO_ANALYSIS_GUIDANCE}",
+                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
+            )
         else:
-            return f"""
-{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+            return """
+{EQUITY_RESEARCH_ANALYST_FRAMING}
 
-{cls.FORMATTING_REQUIREMENTS}
+{FORMATTING_REQUIREMENTS}
 
 {q4_instructions}
 
-{cls.DATA_SOURCE_INSTRUCTIONS}
+{DATA_SOURCE_INSTRUCTIONS}
 
 STRUCTURE - COMPREHENSIVE FINANCIAL ANALYSIS:
 Use BANKING_TABLE_EXAMPLES for professional analysis:
 
 ## Financial Analysis
 
-{cls.BANKING_TABLE_EXAMPLES}
+{BANKING_TABLE_EXAMPLES}
 
 ## Investment Banking Insights
 - Financial performance drivers and trends
@@ -799,14 +830,19 @@ Use BANKING_TABLE_EXAMPLES for professional analysis:
 At the end, list ONLY the chunk IDs that you actually referenced:
 Used Chunks: [list chunk IDs]
 
-{cls.OUTPUT_FORMAT_ANALYSIS}
+{OUTPUT_FORMAT_ANALYSIS}
 
 and using ONLY the following context which was retrieved from financial reports:
 
 [chunks]
-"""
-
-
+""".format(
+                EQUITY_RESEARCH_ANALYST_FRAMING=cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query),
+                FORMATTING_REQUIREMENTS=cls.FORMATTING_REQUIREMENTS,
+                q4_instructions=q4_instructions,
+                DATA_SOURCE_INSTRUCTIONS=cls.DATA_SOURCE_INSTRUCTIONS,
+                BANKING_TABLE_EXAMPLES=cls.BANKING_TABLE_EXAMPLES,
+                OUTPUT_FORMAT_ANALYSIS="{OUTPUT_FORMAT_ANALYSIS}"
+            )
 
     # ═══════════════════════════════════════════════════════════════════════
     # QUARTERLY ENHANCEMENT INSTRUCTIONS - For Query Planning
@@ -843,11 +879,27 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
         """
         
         # Simplified routing logic: Check if this is a pure statement request
-        is_statement_request = any(stmt_term in query.lower() for stmt_term in [
-            "statement", "balance sheet", "profit and loss", "cash flow", 
-            "income statement", "financial statement", "p&l", "p & l"
-        ])
-        
+        # Only use automatic detection if intent is not explicitly provided
+        if intent == "statement":
+            is_statement_request = True
+        elif intent == "analysis":
+            is_statement_request = False
+        else:
+            # Fallback to automatic detection if intent is not specified
+            is_statement_request = any(stmt_term in query.lower() for stmt_term in [
+                "statement", "balance sheet", "profit and loss", "cash flow", 
+                "income statement", "financial statement", "p&l", "p & l"
+            ])
+
+        # Helper to recursively format any string with the cls context
+        def recursive_format(s: str) -> str:
+            return s.format(
+                cls=cls,
+                RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
+                REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
+                CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
+            )
+
         if is_statement_request:
             prompt = cls.get_statement_prompt(query, companies, is_multi_company, 
                                           is_quarterly_comparison, is_side_by_side, 
@@ -857,14 +909,49 @@ IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for
             prompt = cls.get_analysis_prompt(query, companies, is_multi_company, 
                                          is_quarterly_comparison, needs_q4_calculation, 
                                          financial_statement_scope)
-        
-        # Format the placeholders in the prompt
+
+        print("\n[DEBUG] Prompt after initial construction:\n" + (prompt[:500] + '...'))
+        print("\n[DEBUG] Full prompt after initial construction:")
+        print(prompt)
+        print("\n[DEBUG] Looking for placeholders:")
+        print("Contains {OUTPUT_FORMAT_ANALYSIS}:", "{OUTPUT_FORMAT_ANALYSIS}" in prompt)
+        print("Contains {RATIO_ANALYSIS_GUIDANCE}:", "{RATIO_ANALYSIS_GUIDANCE}" in prompt)
+        print("Contains {REPORT_STRUCTURE_TEMPLATE}:", "{REPORT_STRUCTURE_TEMPLATE}" in prompt)
+        print("Contains {CHAIN_OF_THOUGHT_INSTRUCTIONS}:", "{CHAIN_OF_THOUGHT_INSTRUCTIONS}" in prompt)
+
+        # Recursively format OUTPUT_FORMAT_ANALYSIS and similar before inserting
+        prompt = prompt.replace(
+            "{OUTPUT_FORMAT_ANALYSIS}",
+            recursive_format(cls.OUTPUT_FORMAT_ANALYSIS)
+        )
+        prompt = prompt.replace(
+            "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}",
+            recursive_format(cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS)
+        )
+        prompt = prompt.replace(
+            "{RATIO_ANALYSIS_GUIDANCE}",
+            recursive_format(cls.RATIO_ANALYSIS_GUIDANCE)
+        )
+        prompt = prompt.replace(
+            "{REPORT_STRUCTURE_TEMPLATE}",
+            recursive_format(cls.REPORT_STRUCTURE_TEMPLATE)
+        )
+        prompt = prompt.replace(
+            "{CHAIN_OF_THOUGHT_INSTRUCTIONS}",
+            recursive_format(cls.CHAIN_OF_THOUGHT_INSTRUCTIONS)
+        )
+
+        print("\n[DEBUG] Prompt after replacing OUTPUT_FORMAT_ANALYSIS:\n" + (prompt[:500] + '...'))
+
+        # Now, format the prompt itself for any remaining placeholders
         prompt = prompt.format(
             cls=cls,
             RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
             REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
             CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
         )
+
+        print("\n[DEBUG] Prompt after final formatting:\n" + (prompt[:500] + '...'))
         
         return prompt
 
