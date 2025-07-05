@@ -876,11 +876,11 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         yield str(response)
 
 # ─────────────────────────── Chainlit UI ────────────────────────────────
-# Import enhanced authentication
-from enhanced_auth import enhanced_auth_callback
+# Import simple authentication
+from simple_auth import simple_auth_callback
 
-# Use the enhanced authentication callback that supports database users
-auth_callback = enhanced_auth_callback
+# Use simple authentication for database users
+auth_callback = simple_auth_callback
 
 @cl.on_chat_start
 async def welcome_message():
