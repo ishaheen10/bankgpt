@@ -316,15 +316,31 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
     {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
 → intent = "analysis"
 
-"FABL and MEBL last 3 quarters analysis"
-→ Creates: 18 queries (2 companies × 3 statements × 3 quarters)
+"FABL, BIPL and MEBL last 4 quarters analysis"
+→ Creates: 36 queries (3 companies × 3 statements × 4 quarters)
 Example queries:
 1  "FABL balance sheet Q1 2025"
     {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
-2  "MEBL profit and loss Q3 2024"
-    {ticker:"MEBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
-3  "FABL balance sheet 2024"
+2  "FABL profit and loss Q1 2025"
+    {ticker:"FABL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+3  "FABL cash flow Q1 2025"
+    {ticker:"FABL", statement_type:"cash_flow", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+4  "BIPL balance sheet Q1 2025"
+    {ticker:"BIPL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+5  "MEBL balance sheet Q1 2025"
+    {ticker:"MEBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+6  "FABL balance sheet Q3 2024"
+    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
+7  "FABL balance sheet Q2 2024"
+    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+8  "FABL balance sheet 2024"
     {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+9  "BIPL balance sheet 2024"
+    {ticker:"BIPL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+10 "MEBL balance sheet 2024"
+    {ticker:"MEBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+→ Pattern: For each company, create queries for Q1 2025, Q3 2024, Q2 2024, and 2024 annual (for Q4 calculation)
+→ Total: 3 companies × 3 statements × 4 quarters = 36 queries
 
 *NOTES PATTERNS*
 
@@ -340,7 +356,7 @@ Note query: {ticker:"UBL", note_link:"profit_and_loss", is_statement:"no", is_no
 → Creates: 8 queries (2 companies × 3 statements + 2 exposure queries)
 Example (FABL):
 • Statement query: {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
-• Exposure query: {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}   # is_statement/is_note left blank
+• Exposure query: {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}  
 → intent = "analysis"
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
