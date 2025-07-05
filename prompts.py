@@ -224,28 +224,29 @@ FILTER PRIORITIES:
 - Statement types → statement_type
 - Periods → filing_period with exact format
 
-INTENT CLASSIFICATION RULES (IMPROVED):
+INTENT CLASSIFICATION RULES:
 - "statement": ONLY single company, single statement, no analysis keywords
 - "analysis": Multiple companies OR multiple statements OR analysis keywords OR "compare" OR "performance" OR "ratios"
 - FORCE "analysis" if: len(companies) > 1 OR len(statements) > 1 OR analysis_keywords_present OR "last N quarters" pattern
 
 ANALYSIS KEYWORDS: ratios, performance, financial health, KPIs, metrics, analysis, compare, how they did, research, comprehensive, full analysis
 
-BROAD ANALYSIS EXPANSION (IMPROVED):
+BROAD ANALYSIS EXPANSION:
 - For ratios, performance, financial health → Include balance_sheet, profit_and_loss, cash_flow + exposure queries
 - Multi-company → Separate queries per company per statement type + exposure queries
 - Notes requests → Generate both statement and note queries
 
-NOTES HANDLING (NEW):
+NOTES HANDLING:
 - When "notes" keyword detected → Generate statement queries + note queries
 - Note queries: is_note="yes", note_link=corresponding_statement_type
 - Example: "P&L with notes" → 2 queries (P&L statement + P&L notes)
 
-PERIOD FORMAT STANDARDIZATION (IMPROVED):
+PERIOD FORMAT STANDARDIZATION:
 - Annual: ["2024", "2023"] (always include previous year)
 - Quarterly: ["Q1-2024", "Q1-2023"] (always include previous year)
-- Multiple quarters: Separate queries per quarter
+- Multiple quarters: Separate queries per period SET (not individual quarters)
 - Cross-period: Separate queries per period set
+- For "last N quarters": Identify which period sets cover those quarters
 
 SEARCH QUERY: "[COMPANY] [STATEMENT_TYPE/ANALYSIS_TYPE] [PERIOD]"
 
@@ -254,8 +255,20 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 *COMBINATORIAL LOGIC: Create all combinations*
 - Multiple companies: separate query per company
 - Multiple statements: separate query per statement type  
-- Multiple periods: separate query per period
-- Total queries = companies × statements × periods
+- Multiple periods: separate query per period SET (not individual periods)
+- Total queries = companies × statements × period_sets
+
+*PERIOD SET CONCEPT (CRITICAL):*
+- We have predefined period sets, not individual periods
+- Period sets MUST be picked from this list:
+  - Annual: ["2024", "2023"] or ["2022", "2021"]
+  - Quarterly: ["Q1-2025", "Q1-2024"], ["Q1-2024", "Q1-2023"], ["Q2-2024", "Q2-2023"], ["Q3-2024", "Q3-2023"], 
+              ["Q1-2022", "Q1-2021"], ["Q2-2022", "Q2-2021"], ["Q3-2022", "Q3-2021"]
+- For "last N quarters" → identify which period sets cover those quarters
+- Q4 is derived from annual data: Q4 = Annual - Q3
+- Example: "last 6 quarters" = Q1 2025 + Q4 2024 + Q3 2024 + Q2 2024 + Q1 2024 + Q4 2023
+- This requires 4 period sets: ["Q1-2025", "Q1-2024"], ["Q3-2024", "Q3-2023"], ["Q2-2024", "Q2-2023"], ["2024", "2023"]
+- Note: Q1 2024 comes from ["Q1-2025", "Q1-2024"] comparative data, Q4 2023 comes from ["2024", "2023"] comparative data
 
 *LEVEL 1: SIMPLE (1×1×1 = 1 query)*
 
@@ -278,8 +291,11 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 → intent = "analysis"
 
 "HBL Q1-2024 and Q2-2024 balance sheet"
-→ Creates: 2 queries (1 company × 1 statement × 2 periods)
-→ One query per period
+→ Creates: 2 queries (2 period sets):
+1  "HBL balance sheet Q1 2024"
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+2  "HBL balance sheet Q2 2024"
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
 → intent = "analysis"
 
 *LEVEL 3: TRIPLE DIMENSION (2×2×1, 2×1×2, 1×2×2 = 4 queries each)*
@@ -289,25 +305,53 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 → intent = "analysis"
 
 "HBL and UBL Q1-2024 and Q2-2024 balance sheet"
-→ Creates: 4 queries (2 companies × 1 statement × 2 periods)
+→ Creates: 4 queries (2 companies × 2 period sets):
+1  "HBL balance sheet Q1 2024"
+    {ticker:"HBL", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+2  "HBL balance sheet Q2 2024"
+    {ticker:"HBL", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+3  "UBL balance sheet Q1 2024"
+    {ticker:"UBL", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+4  "UBL balance sheet Q2 2024"
+    {ticker:"UBL", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
 → intent = "analysis"
 
 *LEVEL 4: FULL COMPLEXITY (2×2×2 = 8 queries)*
 
 "HBL and UBL Q1-2024 and Q2-2024 balance sheet and profit and loss"
-→ Creates: 8 queries (2 companies × 2 periods × 2 statements)
+→ Creates: 8 queries (2 companies × 2 period sets × 2 statements):
+1  "HBL balance sheet Q1 2024"
+    {ticker:"HBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+2  "HBL balance sheet Q2 2024"
+    {ticker:"HBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+3  "HBL profit and loss Q1 2024"
+    {ticker:"HBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+4  "HBL profit and loss Q2 2024"
+    {ticker:"HBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+5  "UBL balance sheet Q1 2024"
+    {ticker:"UBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+6  "UBL balance sheet Q2 2024"
+    {ticker:"UBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+7  "UBL profit and loss Q1 2024"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+8  "UBL profit and loss Q2 2024"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
 → intent = "analysis"
 
 *CROSS-PERIOD PATTERNS*
 
 "HBL 2024 and 2022 balance sheet"
-→ Creates: 2 queries with filing_period: ["2024","2023"] and ["2022","2021"]
+→ Creates: 2 queries (2 annual period sets):
+1  "HBL balance sheet 2024"
+    {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+2  "HBL balance sheet 2022"
+    {is_statement:"yes", filing_type:"annual", filing_period:["2022","2021"]}
 → intent = "analysis"
 
 *LAST N QUARTERS PATTERNS*
 
 "HBL last 3 quarters balance sheet"
-→ Creates: 3 queries:
+→ Creates: 3 queries (3 period sets):
 1  "HBL balance sheet Q1 2025"
     {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
 2  "HBL balance sheet Q3 2024"
@@ -316,9 +360,21 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
     {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
 → intent = "analysis"
 
+"HBL last 6 quarters balance sheet"
+→ Creates: 4 queries (4 period sets):
+1  "HBL balance sheet Q1 2025"
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+2  "HBL balance sheet Q3 2024"
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
+3  "HBL balance sheet Q2 2024"
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+4  "HBL balance sheet 2024"
+    {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+→ Last 6 quarters: Q1 2025, Q4 2024, Q3 2024, Q2 2024, Q1 2024, Q4 2023
+→ intent = "analysis"
+
 "FABL, BIPL and MEBL last 4 quarters analysis"
-→ Creates: 36 queries (3 companies × 3 statements × 4 quarters)
-Example queries:
+→ Creates: 36 queries (3 companies × 3 statements × 4 period sets):
 1  "FABL balance sheet Q1 2025"
     {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
 2  "FABL profit and loss Q1 2025"
@@ -334,13 +390,13 @@ Example queries:
 7  "FABL balance sheet Q2 2024"
     {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
 8  "FABL balance sheet 2024"
-    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
 9  "BIPL balance sheet 2024"
-    {ticker:"BIPL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+    {ticker:"BIPL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
 10 "MEBL balance sheet 2024"
-    {ticker:"MEBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
-→ Pattern: For each company, create queries for Q1 2025, Q3 2024, Q2 2024, and 2024 annual (for Q4 calculation)
-→ Total: 3 companies × 3 statements × 4 quarters = 36 queries
+    {ticker:"MEBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+→ Last 4 quarters: Q1 2025, Q4 2024, Q3 2024, Q2 2024 (for each company)
+→ Total: 3 companies × 3 statements × 4 period sets = 36 queries
 
 *NOTES PATTERNS*
 
@@ -643,12 +699,22 @@ Context: [chunks]"""
         
         return prompt
 
+    # ═══════════════════════════════════════════════════════════════════════
+    # QUARTERLY ENHANCEMENT INSTRUCTIONS - For Query Planning
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    QUARTERLY_ENHANCEMENT_INSTRUCTIONS = """IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for Q4 calculation:
+- Add quarterly queries for Q1, Q2, Q3 data using predefined period sets
+- Add annual queries for the same companies and statement types
+- The annual data will be used to calculate Q4 = Annual - Q3
+- Period set efficiency: Each period set provides current + comparative data"""
+
     @classmethod
     def get_parsing_user_prompt(cls, user_query: str, bank_tickers: List[str], 
                               is_quarterly_request: bool) -> str:
         """Generate improved user prompt for Claude parsing"""
         
-        quarterly_instruction = "\nInclude quarterly AND annual queries for Q4 calculation." if is_quarterly_request else ""
+        quarterly_instruction = cls.QUARTERLY_ENHANCEMENT_INSTRUCTIONS if is_quarterly_request else ""
         
         return f"""Query: "{user_query}"
 
