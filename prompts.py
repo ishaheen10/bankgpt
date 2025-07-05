@@ -153,7 +153,7 @@ IMPORTANT: You MUST provide this section overview immediately after the Executiv
 
 {REPORT_STRUCTURE_TEMPLATE}
 
-{CHAIN_OF_THOUGHT_INSTRUCTIONS}
+CRITICAL: Use chain of thought reasoning internally to structure your analysis, but DO NOT include or stream your reasoning steps or intermediate thoughts in the output. Only output the final professional report.
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
@@ -163,7 +163,7 @@ ONLY include banking ratios and metrics that are explicitly available in the ret
 
 {REPORT_STRUCTURE_TEMPLATE}
 
-{CHAIN_OF_THOUGHT_INSTRUCTIONS}
+CRITICAL: Use chain of thought reasoning internally to structure your analysis, but DO NOT include or stream your reasoning steps or intermediate thoughts in the output. Only output the final professional report.
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
@@ -227,7 +227,7 @@ FILTER PRIORITIES:
 INTENT CLASSIFICATION RULES (IMPROVED):
 - "statement": ONLY single company, single statement, no analysis keywords
 - "analysis": Multiple companies OR multiple statements OR analysis keywords OR "compare" OR "performance" OR "ratios"
-- FORCE "analysis" if: len(companies) > 1 OR len(statements) > 1 OR analysis_keywords_present
+- FORCE "analysis" if: len(companies) > 1 OR len(statements) > 1 OR analysis_keywords_present OR "last N quarters" pattern
 
 ANALYSIS KEYWORDS: ratios, performance, financial health, KPIs, metrics, analysis, compare, how they did, research, comprehensive, full analysis
 
@@ -249,83 +249,99 @@ PERIOD FORMAT STANDARDIZATION (IMPROVED):
 
 SEARCH QUERY: "[COMPANY] [STATEMENT_TYPE/ANALYSIS_TYPE] [PERIOD]"
 
-STANDARD EXAMPLES  (intent = "analysis" unless noted)
-# Δ = only keys that differ from the prior example are shown;
-# full objects are provided where the pattern is new or complex.
+STANDARD EXAMPLES (intent = "analysis" unless noted)
 
+*COMBINATORIAL LOGIC: Create all combinations*
+- Multiple companies: separate query per company
+- Multiple statements: separate query per statement type  
+- Multiple periods: separate query per period
+- Total queries = companies × statements × periods
 
-*LEVEL-1 • 1×1×1  → 1 query*
+*LEVEL 1: SIMPLE (1×1×1 = 1 query)*
 
-"HBL 2024 balance sheet"      # single co / year / stmt
-→ search_query:  "HBL balance sheet 2024"
-→ metadata_filters:
-  {ticker:"HBL", statement_type:"balance_sheet",
-   is_statement:"yes", is_note:"no",
-   filing_type:"annual", filing_period:["2024","2023"]}
+"HBL 2024 balance sheet"
+→ Creates: 1 query
+→ search_query: "HBL balance sheet 2024"
+→ metadata_filters: {ticker:"HBL", statement_type:"balance_sheet", is_statement:"yes", is_note:"no", filing_type:"annual", filing_period:["2024","2023"]}
 → intent = "statement"
 
-*LEVEL-2 • 2-way cartesian  → 2 queries*
+*LEVEL 2: DUAL DIMENSION (2×1×1, 1×2×1, 1×1×2 = 2 queries each)*
 
-"HBL **and** UBL 2024 balance sheet"
-→ one query per company (same filters as Level-1, ticker adjusted)
+"HBL and UBL 2024 balance sheet"
+→ Creates: 2 queries (2 companies × 1 statement × 1 period)
+→ One query per company with same filters, ticker adjusted
+→ intent = "analysis"
 
-*LEVEL-3 • 3 dimensions  → 4 queries*
+"HBL 2024 balance sheet and profit and loss"
+→ Creates: 2 queries (1 company × 2 statements × 1 period)
+→ One query per statement type
+→ intent = "analysis"
 
-"HBL & UBL 2024 balance sheet **and** profit and loss"
-→ 2 companies × 2 statements × 1 period
+"HBL Q1-2024 and Q2-2024 balance sheet"
+→ Creates: 2 queries (1 company × 1 statement × 2 periods)
+→ One query per period
+→ intent = "analysis"
 
-*LEVEL-4 • 2×2×2  → 8 queries*
+*LEVEL 3: TRIPLE DIMENSION (2×2×1, 2×1×2, 1×2×2 = 4 queries each)*
 
-"HBL & UBL Q1-2024 **and** Q2-2024 balance sheet & P&L"
-Example of **one** of the eight queries (HBL, Q1-2024, P&L):
-→ search_query: "HBL profit and loss Q1 2024"
-→ metadata_filters:
-  {ticker:"HBL", statement_type:"profit_and_loss",
-   is_statement:"yes", is_note:"no",
-   filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
+"HBL and UBL 2024 balance sheet and profit and loss"
+→ Creates: 4 queries (2 companies × 2 statements × 1 period)
+→ intent = "analysis"
 
-*CROSS-PERIOD  • Annual sets*
+"HBL and UBL Q1-2024 and Q2-2024 balance sheet"
+→ Creates: 4 queries (2 companies × 1 statement × 2 periods)
+→ intent = "analysis"
 
-"HBL 2024 **and** 2022 balance sheet"
-→ produces two queries with `filing_period`
-   ["2024","2023"]  and  ["2022","2021"]
+*LEVEL 4: FULL COMPLEXITY (2×2×2 = 8 queries)*
 
-*LAST-N-QUARTERS  • shows Q4 calc pattern*
+"HBL and UBL Q1-2024 and Q2-2024 balance sheet and profit and loss"
+→ Creates: 8 queries (2 companies × 2 periods × 2 statements)
+→ intent = "analysis"
+
+*CROSS-PERIOD PATTERNS*
+
+"HBL 2024 and 2022 balance sheet"
+→ Creates: 2 queries with filing_period: ["2024","2023"] and ["2022","2021"]
+→ intent = "analysis"
+
+*LAST N QUARTERS PATTERNS*
 
 "HBL last 3 quarters balance sheet"
+→ Creates: 3 queries:
 1  "HBL balance sheet Q1 2025"
-    {is_statement:"yes", filing_type:"quarterly",
-     filing_period:["Q1-2025","Q1-2024"]}
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
 2  "HBL balance sheet Q3 2024"
-    {is_statement:"yes", filing_type:"quarterly",
-     filing_period:["Q3-2024","Q3-2023"]}
+    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
 3  "HBL balance sheet 2024"
-    {is_statement:"yes", filing_type:"annual",
-     filing_period:["2024","2023"]}   # used to derive Q4
+    {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
+→ intent = "analysis"
 
-*NOTES  • statement + note (mutual exclusion)*
+"FABL and MEBL last 3 quarters analysis"
+→ Creates: 18 queries (2 companies × 3 statements × 3 quarters)
+Example queries:
+1  "FABL balance sheet Q1 2025"
+    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+2  "MEBL profit and loss Q3 2024"
+    {ticker:"MEBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
+3  "FABL balance sheet 2024"
+    {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
 
-"UBL profit and loss **with notes** 2024"
-Statement query:  
-  {ticker:"UBL", statement_type:"profit_and_loss",
-   is_statement:"yes", is_note:"no",
-   filing_type:"annual", filing_period:["2024","2023"]}
-Note query:  
-  {ticker:"UBL", note_link:"profit_and_loss",
-   is_statement:"no",  is_note:"yes",
-   filing_type:"annual", filing_period:["2024","2023"]}
+*NOTES PATTERNS*
 
-*BROAD ANALYSIS EXPANSION*
+"UBL profit and loss with notes 2024"
+→ Creates: 2 queries (statement query + note query)
+Statement query: {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", is_note:"no", filing_type:"annual", filing_period:["2024","2023"]}
+Note query: {ticker:"UBL", note_link:"profit_and_loss", is_statement:"no", is_note:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+→ intent = "analysis"
+
+*BROAD ANALYSIS PATTERNS*
 
 "Ratios for FABL & MEBL 2024"
+→ Creates: 8 queries (2 companies × 3 statements + 2 exposure queries)
 Example (FABL):
-• Statement query (balance sheet)  
-  {ticker:"FABL", statement_type:"balance_sheet",
-   is_statement:"yes", filing_type:"annual",
-   filing_period:["2024","2023"]}
-• Exposure query (sector)  
-  {ticker:"FABL", filing_type:"annual",
-   filing_period:["2024","2023"]}   # is_statement/is_note left blank
+• Statement query: {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+• Exposure query: {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}   # is_statement/is_note left blank
+→ intent = "analysis"
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
 
