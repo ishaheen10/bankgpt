@@ -55,47 +55,29 @@ Respond with professional financial analysis:"""
 
     OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. NO explanatory text."""
 
-    CHAIN_OF_THOUGHT_INSTRUCTIONS = """CRITICAL: Follow this structured thinking process step-by-step. Show your reasoning explicitly:
+    CHAIN_OF_THOUGHT_INSTRUCTIONS = """INTERNAL REASONING FRAMEWORK - Use this structured thinking process internally (DO NOT OUTPUT THESE STEPS):
 
-## STEP 1: CONTEXT ANALYSIS & REASONING
-**Let me analyze the provided financial data context:**
+**Step 1: Context Analysis & Data Assessment**
+- Internally identify companies, time periods, statement types, and data completeness
+- Assess what ratios can be calculated with available data
+- Note any data quality issues or limitations
 
-**Companies Identified:** [List companies found in context]
-**Time Periods Available:** [List periods found in context]
-**Statement Types:** [List statement types found in context]
-**Currency Format:** [Note the currency format used]
-**Data Completeness Assessment:** [Note what data is complete vs. missing]
-**Calculable Ratios:** [List ratios that can be calculated with available data]
+**Step 2: Report Structure Planning**
+- Internally plan the most logical report structure based on available data
+- Determine which sections will provide the most value to the reader
+- Consider the balance between quantitative data and qualitative insights
 
-**Key Observations:**
-- [Observation 1 about data quality/availability]
-- [Observation 2 about trends/patterns]
-- [Observation 3 about limitations]
+**Step 3: Systematic Analysis Development**
+- Work through each section systematically using available data
+- Ensure all conclusions are supported by the provided context
+- Verify calculations and ratio formulas are correct
 
-## STEP 2: REPORT STRUCTURE PLANNING
-**Based on my analysis, I will structure the report as follows:**
+**Step 4: Quality Verification**
+- Confirm all data is sourced from provided context only
+- Check that currency formatting is consistent
+- Ensure professional investment banking tone is maintained
 
-**Executive Summary:** [Brief overview of key findings]
-**Financial Performance Overview:** [Main metrics and trends]
-**Ratio Analysis:** [If applicable - which ratios to include]
-**Comparative Analysis:** [If multiple companies - comparison approach]
-**Investment Insights:** [Key takeaways for investors]
-**Risk Assessment:** [Risk factors and considerations]
-
-## STEP 3: SYSTEMATIC SECTION DEVELOPMENT
-**Now I will develop each section systematically:**
-
-[Proceed to write each section following the planned structure]
-
-## STEP 4: QUALITY VERIFICATION
-**Before finalizing, I verify:**
-- ✅ All data sourced from provided context only
-- ✅ Proper currency formatting maintained
-- ✅ Ratios calculated correctly
-- ✅ Professional investment banking tone achieved
-
-**Final Report Structure:**
-[Present the complete report with all sections]"""
+**CRITICAL: These reasoning steps are for your internal process only. Do NOT include any of these steps or meta-commentary in your output. Only provide the final professional report."""
 
     REPORT_STRUCTURE_TEMPLATE = """CRITICAL REPORT STRUCTURE REQUIREMENTS:
 
@@ -358,7 +340,7 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
     {is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
 3  "HBL balance sheet 2024"
     {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
-→ intent = "analysis"
+→ intent = "statement"
 
 "HBL last 6 quarters balance sheet"
 → Creates: 4 queries (4 period sets):
@@ -371,7 +353,7 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 4  "HBL balance sheet 2024"
     {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
 → Last 6 quarters: Q1 2025, Q4 2024, Q3 2024, Q2 2024, Q1 2024, Q4 2023
-→ intent = "analysis"
+→ intent = "statement"
 
 "FABL, BIPL and MEBL last 4 quarters analysis"
 → Creates: 36 queries (3 companies × 3 statements × 4 period sets):
@@ -395,6 +377,7 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
     {ticker:"BIPL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
 10 "MEBL balance sheet 2024"
     {ticker:"MEBL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
+→ intent = "analysis"
 → Last 4 quarters: Q1 2025, Q4 2024, Q3 2024, Q2 2024 (for each company)
 → Total: 3 companies × 3 statements × 4 period sets = 36 queries
 
