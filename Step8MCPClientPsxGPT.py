@@ -61,7 +61,7 @@ anthropic_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY, timeout=6
 
 # Google GenAI for streaming responses (proven working configuration)
 from llama_index.llms.google_genai import GoogleGenAI
-streaming_llm = GoogleGenAI(model="models/gemini-2.5-pro", api_key=GEMINI_API_KEY, temperature=0.3)
+streaming_llm = GoogleGenAI(model="models/gemini-2.5-flash-lite-preview-06-17", api_key=GEMINI_API_KEY, temperature=0.3)
 
 # Import prompts library
 from prompts import prompts
@@ -130,7 +130,7 @@ class QueryPlan(BaseModel):
 
 # ─────────────────────────── Context & Source Management ─────────────────
 def format_sources(nodes: List[Dict], used_chunk_ids: Optional[List[str]] = None) -> str:
-    """Enhanced source formatting with filtering for actually used chunks"""
+    """Enhanced source formatting with filtering for actually used chunks, grouped by file"""
     if not nodes:
         return ""
     
@@ -153,37 +153,37 @@ def format_sources(nodes: List[Dict], used_chunk_ids: Optional[List[str]] = None
     if used_chunk_ids:
         sources += f"**Showing {len(nodes)} chunks actually used in the analysis** (filtered from original results)\n\n"
     
-    for i, node in enumerate(nodes, 1):
+    # Group nodes by source file
+    file_groups = {}
+    for node in nodes:
         try:
             metadata = node.get("metadata", {})
-            score = node.get("score", 0.0)
-            
-            # Extract key metadata
-            ticker = metadata.get("ticker", "Unknown")
-            filing_period = metadata.get("filing_period", "Unknown")
-            statement_type = metadata.get("statement_type", "Unknown")
-            scope = metadata.get("financial_statement_scope", "")
             source_file = metadata.get("source_file", "Unknown")
             chunk_number = metadata.get("chunk_number", "Unknown")
             
-            # Format period nicely
-            period_str = filing_period
-            if isinstance(filing_period, list) and filing_period:
-                period_str = filing_period[0] if len(filing_period) == 1 else f"{filing_period[0]} & {filing_period[1]}"
+            if source_file not in file_groups:
+                file_groups[source_file] = []
             
-            # Format statement type nicely  
-            statement_display = statement_type.replace("_", " ").title()
-            
-            # Add scope if available
-            scope_display = f" ({scope})" if scope and scope != "none" else ""
-            
-            # Include chunk number in the reference
-            sources += f"**[{i}]** {ticker} - {statement_display}{scope_display} - Chunk #{chunk_number} ({period_str})\n"
-            sources += f"   - **Relevance**: {score:.3f} | **Source**: {source_file}\n\n"
+            file_groups[source_file].append(chunk_number)
             
         except Exception as e:
-            log.warning(f"Error formatting source {i}: {e}")
-            sources += f"**[{i}]** Source formatting error\n\n"
+            log.warning(f"Error processing node for grouping: {e}")
+    
+    # Format grouped sources
+    for i, (source_file, chunk_numbers) in enumerate(file_groups.items(), 1):
+        # Sort chunk numbers numerically
+        try:
+            chunk_numbers = sorted(chunk_numbers, key=lambda x: int(x) if str(x).isdigit() else 0)
+        except:
+            pass  # Keep original order if sorting fails
+        
+        # Format chunk numbers list
+        if len(chunk_numbers) == 1:
+            chunks_str = f"chunk {chunk_numbers[0]}"
+        else:
+            chunks_str = f"chunks {', '.join(map(str, chunk_numbers))}"
+        
+        sources += f"**{i}.** File name: {source_file}; {chunks_str} used\n\n"
     
     return sources
 
