@@ -53,31 +53,21 @@ Respond with professional financial analysis:"""
 - Prioritize ratios that are most relevant to the user's specific query focus (e.g., efficiency, profitability, asset quality)
 - *Compute a ratio only when **both** numerator and denominator appear in the provided chunks.*"""
 
-    OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. NO explanatory text."""
+    OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. NO explanatory text.
 
-    CHAIN_OF_THOUGHT_INSTRUCTIONS = """INTERNAL REASONING FRAMEWORK - Use this structured thinking process internally (DO NOT OUTPUT THESE STEPS):
+{{COMPLETE_LINE_ITEM_EMPHASIS}}
 
-**Step 1: Context Analysis & Data Assessment**
-- Internally identify companies, time periods, statement types, and data completeness
-- Assess what ratios can be calculated with available data
-- Note any data quality issues or limitations
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}"""
 
-**Step 2: Report Structure Planning**
-- Internally plan the most logical report structure based on available data
-- Determine which sections will provide the most value to the reader
-- Consider the balance between quantitative data and qualitative insights
+    CHAIN_OF_THOUGHT_INSTRUCTIONS = """CRITICAL: Follow this structured thinking process internally. Do NOT output the step-by-step reasoning - proceed directly to the final formatted report.
 
-**Step 3: Systematic Analysis Development**
-- Work through each section systematically using available data
-- Ensure all conclusions are supported by the provided context
-- Verify calculations and ratio formulas are correct
+INTERNAL REASONING PROCESS (do not show to user):
+1. **Context Analysis**: Identify companies, time periods, statement types, currency format, data completeness, calculable ratios
+2. **Report Structure Planning**: Plan executive summary, financial overview, ratio analysis, comparative analysis if needed
+3. **Section Development**: Develop each planned section systematically
+4. **Quality Verification**: Ensure all data sourced from context, proper formatting, correct calculations
 
-**Step 4: Quality Verification**
-- Confirm all data is sourced from provided context only
-- Check that currency formatting is consistent
-- Ensure professional investment banking tone is maintained
-
-**CRITICAL: These reasoning steps are for your internal process only. Do NOT include any of these steps or meta-commentary in your output. Only provide the final professional report."""
+IMPORTANT: After completing your internal analysis, present ONLY the final professional financial report WITHOUT showing the reasoning steps."""
 
     REPORT_STRUCTURE_TEMPLATE = """CRITICAL REPORT STRUCTURE REQUIREMENTS:
 
@@ -131,21 +121,21 @@ IMPORTANT: You MUST provide this section overview immediately after the Executiv
 
     OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-{RATIO_ANALYSIS_GUIDANCE}
+{{RATIO_ANALYSIS_GUIDANCE}}
 
-{REPORT_STRUCTURE_TEMPLATE}
+{{REPORT_STRUCTURE_TEMPLATE}}
 
-CRITICAL: Use chain of thought reasoning internally to structure your analysis, but DO NOT include or stream your reasoning steps or intermediate thoughts in the output. Only output the final professional report.
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
 
     OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
 
-{RATIO_ANALYSIS_GUIDANCE}
+{{RATIO_ANALYSIS_GUIDANCE}}
 
-{REPORT_STRUCTURE_TEMPLATE}
+{{REPORT_STRUCTURE_TEMPLATE}}
 
-CRITICAL: Use chain of thought reasoning internally to structure your analysis, but DO NOT include or stream your reasoning steps or intermediate thoughts in the output. Only output the final professional report.
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
@@ -207,11 +197,17 @@ FILTER PRIORITIES:
 - Periods → filing_period with exact format
 
 INTENT CLASSIFICATION RULES:
-- "statement": ONLY single company, single statement, no analysis keywords
-- "analysis": Multiple companies OR multiple statements OR analysis keywords OR "compare" OR "performance" OR "ratios"
-- FORCE "analysis" if: len(companies) > 1 OR len(statements) > 1 OR analysis_keywords_present OR "last N quarters" pattern
+- "statement": Single company requesting specific financial statement(s), including historical periods (e.g., "last N years", "2020-2024", "past 3 years")
+- "analysis": Multiple companies OR analysis keywords (ratios, performance, compare, analysis, etc.) OR explicit analysis request
 
 ANALYSIS KEYWORDS: ratios, performance, financial health, KPIs, metrics, analysis, compare, how they did, research, comprehensive, full analysis
+
+HISTORICAL STATEMENT PATTERNS: 
+- "last N years", "past N years", "previous N years" = STATEMENT intent (historical data request)
+- Date ranges for single company = STATEMENT intent  
+- Multiple years for single statement = STATEMENT intent
+
+FORCE "analysis" ONLY if: len(companies) > 1 OR analysis_keywords_present OR explicit analysis request
 
 BROAD ANALYSIS EXPANSION:
 - For ratios, performance, financial health → Include balance_sheet, profit_and_loss, cash_flow + exposure queries
@@ -240,6 +236,11 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 - Multiple periods: separate query per period SET (not individual periods)
 - Total queries = companies × statements × period_sets
 
+*HISTORICAL STATEMENT HANDLING*
+- "last N years" for single company + single statement = STATEMENT intent, single query with appropriate period set
+- "last N years" for single company + multiple statements = ANALYSIS intent, multiple queries
+- "last N years" for multiple companies = ANALYSIS intent, multiple queries
+
 *PERIOD SET CONCEPT (CRITICAL):*
 - We have predefined period sets, not individual periods
 - Period sets MUST be picked from this list:
@@ -252,7 +253,7 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 - This requires 4 period sets: ["Q1-2025", "Q1-2024"], ["Q3-2024", "Q3-2023"], ["Q2-2024", "Q2-2023"], ["2024", "2023"]
 - Note: Q1 2024 comes from ["Q1-2025", "Q1-2024"] comparative data, Q4 2023 comes from ["2024", "2023"] comparative data
 
-*LEVEL 1: SIMPLE (1×1×1 = 1 query)*
+*LEVEL 1: SIMPLE STATEMENT REQUESTS (intent = "statement")*
 
 "HBL 2024 balance sheet"
 → Creates: 1 query
@@ -435,7 +436,7 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
     def get_statement_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
                            is_quarterly_comparison: bool, needs_q4_calculation: bool, 
                            financial_statement_scope: str = None) -> str:
-        """Generate improved statement analysis prompt with restored guardrails"""
+        """Generate improved statement analysis prompt with complete line item capture"""
         
         scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
         q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
@@ -453,6 +454,10 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
+{{COMPLETE_LINE_ITEM_EMPHASIS}}
+
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
+
 ## {', '.join(companies_set)} - Quarterly Analysis ({scope_display})
 
 {cls.QUARTERLY_TREND_TEMPLATES}
@@ -461,7 +466,7 @@ If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Reven
 
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-{cls.OUTPUT_FORMAT_STATEMENT}
+{{OUTPUT_FORMAT_STATEMENT}}
 
 Context: [chunks]"""
         
@@ -475,6 +480,10 @@ Context: [chunks]"""
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
+{{COMPLETE_LINE_ITEM_EMPHASIS}}
+
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
+
 ## {', '.join(companies_set)} - Financial Analysis ({scope_display})
 
 {cls.BANKING_TABLE_EXAMPLES}
@@ -483,7 +492,7 @@ Context: [chunks]"""
 
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-{cls.OUTPUT_FORMAT_STATEMENT}
+{{OUTPUT_FORMAT_STATEMENT}}
 
 Context: [chunks]"""
         
@@ -497,6 +506,10 @@ Context: [chunks]"""
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
+{{COMPLETE_LINE_ITEM_EMPHASIS}}
+
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
+
 ## {companies[0] if companies else 'Company'} - Quarterly Analysis ({scope_display})
 
 {cls.QUARTERLY_TREND_TEMPLATES}
@@ -505,7 +518,7 @@ Context: [chunks]"""
 
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-{cls.OUTPUT_FORMAT_STATEMENT}
+{{OUTPUT_FORMAT_STATEMENT}}
 
 Context: [chunks]"""
         
@@ -519,9 +532,13 @@ Context: [chunks]"""
 
 {cls.DATA_SOURCE_INSTRUCTIONS}
 
+{{COMPLETE_LINE_ITEM_EMPHASIS}}
+
+{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
+
 {cls.CHUNK_TRACKING_INSTRUCTIONS}
 
-{cls.OUTPUT_FORMAT_STATEMENT}
+{{OUTPUT_FORMAT_STATEMENT}}
 
 Context: [chunks]"""
 
@@ -552,7 +569,7 @@ Context: [chunks]"""
 
 {cls.BANKING_TABLE_EXAMPLES}
 
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
+{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
 
@@ -579,7 +596,7 @@ Companies: {', '.join(companies_set)}
 
 {cls.RATIO_ANALYSIS_GUIDANCE}
 
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
+{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
 
@@ -598,7 +615,7 @@ Context: [chunks]"""
 
 {cls.BANKING_TABLE_EXAMPLES}
 
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
+{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
 
 {cls.OUTPUT_FORMAT_ANALYSIS}
 
@@ -608,14 +625,6 @@ Context: [chunks]"""
     # UTILITY METHODS - Fixed unused parameter and added safe formatting
     # ═══════════════════════════════════════════════════════════════════════
     
-    @classmethod
-    def _safe_format(cls, template: str, **kwargs) -> str:
-        """Safe formatting with descriptive error handling"""
-        try:
-            return template.format(**kwargs)
-        except KeyError as e:
-            raise ValueError(f"Missing placeholder {e} in prompt template") from None
-
     @classmethod
     def get_prompt_for_intent(cls, intent: str, query: str, companies: List[str], 
                             is_multi_company: bool, is_quarterly_comparison: bool, 
@@ -630,11 +639,27 @@ Context: [chunks]"""
 
         # Helper to recursively format placeholders
         def recursive_format(s: str) -> str:
-            return s.format(
-                RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
-                REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
-                CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
-            )
+            # Use simple string replacement to avoid format specifier conflicts
+            replacements = {
+                "{RATIO_ANALYSIS_GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE,
+                "{REPORT_STRUCTURE_TEMPLATE}": cls.REPORT_STRUCTURE_TEMPLATE,
+                "{CHAIN_OF_THOUGHT_INSTRUCTIONS}": cls.CHAIN_OF_THOUGHT_INSTRUCTIONS,
+                "{COMPLETE_LINE_ITEM_EMPHASIS}": cls.COMPLETE_LINE_ITEM_EMPHASIS,
+                "{OUTPUT_FORMAT_STATEMENT}": cls.OUTPUT_FORMAT_STATEMENT,
+                "{OUTPUT_FORMAT_ANALYSIS}": cls.OUTPUT_FORMAT_ANALYSIS,
+                "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}": cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS,
+                "{ENHANCED_REASONING_FRAMEWORK}": cls.ENHANCED_REASONING_FRAMEWORK,
+                "{QUARTERLY_TREND_TEMPLATES}": cls.QUARTERLY_TREND_TEMPLATES,
+                "{COMPARATIVE_ANALYSIS_TEMPLATES}": cls.COMPARATIVE_ANALYSIS_TEMPLATES,
+                "{BANKING_TABLE_EXAMPLES}": cls.BANKING_TABLE_EXAMPLES,
+                "{QUARTERLY_DATA_PRIORITY}": cls.QUARTERLY_DATA_PRIORITY,
+                "{BANKING RATIO ANALYSIS GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE
+            }
+            
+            result = s
+            for placeholder, replacement in replacements.items():
+                result = result.replace(placeholder, replacement)
+            return result
 
         if is_statement_request:
             prompt = cls.get_statement_prompt(query, companies, is_multi_company, 
@@ -655,6 +680,10 @@ Context: [chunks]"""
             recursive_format(cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS)
         )
         prompt = prompt.replace(
+            "{OUTPUT_FORMAT_STATEMENT}",
+            recursive_format(cls.OUTPUT_FORMAT_STATEMENT)
+        )
+        prompt = prompt.replace(
             "{RATIO_ANALYSIS_GUIDANCE}",
             recursive_format(cls.RATIO_ANALYSIS_GUIDANCE)
         )
@@ -666,19 +695,30 @@ Context: [chunks]"""
             "{CHAIN_OF_THOUGHT_INSTRUCTIONS}",
             recursive_format(cls.CHAIN_OF_THOUGHT_INSTRUCTIONS)
         )
+        prompt = prompt.replace(
+            "{COMPLETE_LINE_ITEM_EMPHASIS}",
+            recursive_format(cls.COMPLETE_LINE_ITEM_EMPHASIS)
+        )
 
-        # Final formatting with safe error handling
-        try:
-            prompt = cls._safe_format(prompt,
-                RATIO_ANALYSIS_GUIDANCE=cls.RATIO_ANALYSIS_GUIDANCE,
-                REPORT_STRUCTURE_TEMPLATE=cls.REPORT_STRUCTURE_TEMPLATE,
-                CHAIN_OF_THOUGHT_INSTRUCTIONS=cls.CHAIN_OF_THOUGHT_INSTRUCTIONS
-            )
-        except ValueError as e:
-            # Log the error and return a fallback prompt
-            import logging
-            logging.error(f"Prompt formatting error: {e}")
-            return f"Error in prompt generation: {e}. Please try again."
+        # Final formatting with placeholder replacement
+        final_replacements = {
+            "{RATIO_ANALYSIS_GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE,
+            "{REPORT_STRUCTURE_TEMPLATE}": cls.REPORT_STRUCTURE_TEMPLATE,
+            "{CHAIN_OF_THOUGHT_INSTRUCTIONS}": cls.CHAIN_OF_THOUGHT_INSTRUCTIONS,
+            "{COMPLETE_LINE_ITEM_EMPHASIS}": cls.COMPLETE_LINE_ITEM_EMPHASIS,
+            "{OUTPUT_FORMAT_STATEMENT}": cls.OUTPUT_FORMAT_STATEMENT,
+            "{OUTPUT_FORMAT_ANALYSIS}": cls.OUTPUT_FORMAT_ANALYSIS,
+            "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}": cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS,
+            "{ENHANCED_REASONING_FRAMEWORK}": cls.ENHANCED_REASONING_FRAMEWORK,
+            "{QUARTERLY_TREND_TEMPLATES}": cls.QUARTERLY_TREND_TEMPLATES,
+            "{COMPARATIVE_ANALYSIS_TEMPLATES}": cls.COMPARATIVE_ANALYSIS_TEMPLATES,
+            "{BANKING_TABLE_EXAMPLES}": cls.BANKING_TABLE_EXAMPLES,
+            "{QUARTERLY_DATA_PRIORITY}": cls.QUARTERLY_DATA_PRIORITY,
+            "{BANKING RATIO ANALYSIS GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE
+        }
+        
+        for placeholder, replacement in final_replacements.items():
+            prompt = prompt.replace(placeholder, replacement)
         
         return prompt
 
@@ -706,6 +746,15 @@ Available bank tickers: {bank_tickers}
 {quarterly_instruction}
 
 Create QueryPlan following system parsing rules."""
+
+    COMPLETE_LINE_ITEM_EMPHASIS = """CRITICAL FOR STATEMENT REQUESTS - COMPLETE LINE ITEM CAPTURE:
+- When intent is "statement", you MUST include ALL line items found in the financial statements
+- Do NOT summarize or omit any line items - include every single line from the original statement
+- For cash flow statements: Include ALL operating, investing, and financing activities line by line
+- For profit & loss: Include ALL revenue, expense, and profit line items
+- For balance sheets: Include ALL asset, liability, and equity line items
+- If space is limited, prioritize completeness over formatting - include every line item available
+- Missing line items is considered a critical error for statement requests"""
 
 # ═══════════════════════════════════════════════════════════════════════
 # CONVENIENCE INSTANCE FOR EASY IMPORTING - Dual alias for compatibility
