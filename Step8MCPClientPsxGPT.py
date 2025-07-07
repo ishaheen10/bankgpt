@@ -59,15 +59,13 @@ except Exception as e:
 # Anthropic client with enhanced configuration
 anthropic_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY, timeout=60.0)
 
-# Google GenAI for streaming responses (proven working configuration)
+# Google GenAI for streaming responses (uses maximum token limits by default)
 from llama_index.llms.google_genai import GoogleGenAI
 streaming_llm = GoogleGenAI(
     model="models/gemini-2.5-flash", 
     api_key=GEMINI_API_KEY, 
     temperature=0.3,
-    max_tokens=8192,
-    timeout=120.0,
-    max_input_size=1000000
+    timeout=120.0
 )
 
 # Google GenAI streaming LLM initialized
@@ -312,7 +310,7 @@ async def parse_query_with_claude(user_query: str, conversation_context: Optiona
     try:
         response = await anthropic_client.messages.create(
             model="claude-4-sonnet-20250514",
-            max_tokens=4000,
+            max_tokens=30000,
             temperature=0.1,
             system=prompts.PARSING_SYSTEM_PROMPT,
             messages=messages,  # Use Claude's native message format
@@ -784,22 +782,19 @@ async def execute_financial_query(query_plan: QueryPlan, original_query: str) ->
     return result_data
 
 async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, companies: List[str]):
-    """Stream formatted response using centralized prompts library with chain of thought"""
+    """Stream formatted response using simplified prompts library"""
     if not nodes:
         yield "No relevant financial data found for your query."
         return
     
     # Analyze the nodes to detect multi-company scenario
     companies_set = set(companies)
-    statements = set()
     periods = set()
     has_annual_data = False
     has_quarterly_data = False
     
     for node in nodes:
         metadata = node.get("metadata", {})
-        if stmt := metadata.get("statement_type"):
-            statements.add(stmt)
         if period := metadata.get("filing_period"):
             # Handle filing_period which can be a list or string
             if isinstance(period, list):
@@ -819,18 +814,11 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
     user_query_lower = query.lower()
     is_quarterly_request = any(q_term in user_query_lower for q_term in ["quarterly", "quarter", "q1", "q2", "q3", "q4"])
     is_quarterly_data = is_quarterly_request and any(["Q1" in str(p) or "Q2" in str(p) or "Q3" in str(p) or "Q4" in str(p) for p in periods])
-    
-    # Determine if this is a statement request
-    is_statement_request = any(stmt_term in user_query_lower for stmt_term in [
-        "statement", "balance sheet", "profit and loss", "cash flow", 
-        "income statement", "financial statement", "p&l", "p & l"
-    ])
-    
     needs_q4_calculation = is_quarterly_request and has_annual_data and has_quarterly_data
     
     log.info(f"Response analysis: {len(companies_set)} companies, quarterly: {is_quarterly_request}, Q4_calc: {needs_q4_calculation}")
     
-    # Get appropriate prompt using the prompts library
+    # Get appropriate prompt using the simplified prompts library
     prompt = prompts.get_prompt_for_intent(
         intent=intent,
         query=query,
@@ -840,8 +828,7 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         needs_q4_calculation=needs_q4_calculation
     )
     
-    prompt_type = "statement" if is_statement_request else "analysis"
-    log.info(f"🎨 Using {prompt_type} prompt for {len(companies_set)} companies")
+    log.info(f"🎨 Using {intent} prompt for {len(companies_set)} companies")
     
     # Prepare context from nodes with chunk identification
     context_str = ""
@@ -849,40 +836,12 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         chunk_id = node.get("metadata", {}).get("chunk_number", f"chunk_{i+1}")
         context_str += f"\n\n--- Chunk #{chunk_id} ---\n{node.get('text', '')}"
     
-    # Limit context size to prevent prompt truncation
-    MAX_CONTEXT_SIZE = 100000
-    if len(context_str) > MAX_CONTEXT_SIZE:
-        log.warning(f"⚠️ Context truncated to {MAX_CONTEXT_SIZE} chars to fit prompt limits")
-        context_str = context_str[:MAX_CONTEXT_SIZE] + "\n\n[CONTEXT TRUNCATED - SHOWING FIRST CHUNKS ONLY]"
-    
     log.info(f"📊 Context prepared: {len(context_str)} characters from {len(nodes)} nodes")
     
     # Replace the [chunks] placeholder with actual context
     full_prompt = prompt.replace("[chunks]", context_str)
     
-    # Final safeguard against prompt being too large
-    MAX_PROMPT_SIZE = 150000
-    if len(full_prompt) > MAX_PROMPT_SIZE:
-        log.warning(f"⚠️ Prompt too large ({len(full_prompt)} chars), truncating to fit limits")
-        
-        # Split prompt into instructions and context parts
-        context_start = full_prompt.find("--- Chunk #")
-        if context_start > 0:
-            instructions_part = full_prompt[:context_start]
-            context_part = full_prompt[context_start:]
-            
-            # Calculate how much context we can keep
-            available_space = MAX_PROMPT_SIZE - len(instructions_part) - 100
-            if available_space > 0:
-                truncated_context = context_part[:available_space] + "\n\n[CONTEXT TRUNCATED TO FIT PROMPT LIMITS]"
-                full_prompt = instructions_part + truncated_context
-            else:
-                log.error(f"❌ Instructions too large, cannot fit context!")
-        else:
-            # Fallback: truncate from the end
-            full_prompt = full_prompt[:MAX_PROMPT_SIZE] + "\n\n[PROMPT TRUNCATED]"
-    
-    # Stream response using LLM directly (simple and reliable)
+    # Stream response using LLM directly
     try:
         stream = await streaming_llm.astream_complete(full_prompt)
         
@@ -991,11 +950,11 @@ async def on_message(message: cl.Message):
         step2.content += f"\n   📈 **Success rate:** {success_rate:.0f}% ({query_stats.get('successful_queries', 0)}/{query_stats.get('total_queries', 0)} queries)"
         await step2.update()
         
-        # Step 3: Stream the analysis with chain of thought
-        step3 = cl.Message(content="📊 **Step 3:** Generating financial analysis with chain of thought...")
+        # Step 3: Stream the analysis
+        step3 = cl.Message(content="📊 **Step 3:** Generating financial analysis...")
         await step3.send()
         
-        # Create streaming response message with chain of thought support
+        # Create streaming response message
         response_msg = cl.Message(content="")
         await response_msg.send()
         

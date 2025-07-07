@@ -1,16 +1,16 @@
 """
-PSX Financial Assistant - Optimized Prompts Library
-Streamlined prompt management for efficient AI interactions with reduced token usage
+PSX Financial Assistant - Simplified Prompts Library
+Clean prompt management focused on format requirements only
 """
 
 from typing import Dict, List, Set
 
 
-class OptimizedPromptLibrary:
-    """Optimized prompt management for PSX Financial Assistant with reduced token usage"""
+class SimplifiedPromptLibrary:
+    """Simplified prompt management for PSX Financial Assistant"""
     
     # ═══════════════════════════════════════════════════════════════════════
-    # CORE INSTRUCTION BLOCKS - Restored critical guardrails
+    # CORE INSTRUCTION BLOCKS
     # ═══════════════════════════════════════════════════════════════════════
     
     EQUITY_RESEARCH_ANALYST_FRAMING = """You are a top tier equity research analyst focused on analyzing banks. Your client asked: {query}
@@ -53,25 +53,30 @@ Respond with professional financial analysis:"""
 - Prioritize ratios that are most relevant to the user's specific query focus (e.g., efficiency, profitability, asset quality)
 - *Compute a ratio only when **both** numerator and denominator appear in the provided chunks.*"""
 
-    OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. NO explanatory text.
+    # FORMAT INSTRUCTIONS FOR STATEMENT REQUESTS
+    OUTPUT_FORMAT_STATEMENT = """Present financial data in clean markdown tables only. Include ALL line items from the financial statements - do not summarize or omit any line items.
 
-{{COMPLETE_LINE_ITEM_EMPHASIS}}
+CRITICAL COMPLETENESS REQUIREMENTS:
+- You MUST include ALL line items found in the financial statements - this is mandatory
+- Do NOT summarize, abbreviate, or omit any line items - include every single line from the original statement
+- For cash flow statements: Include ALL operating, investing, and financing activities line by line
+- For profit & loss: Include ALL revenue, expense, and profit line items  
+- For balance sheets: Include ALL asset, liability, and equity line items
+- Continue until you have shown every line item available in the source data
+- Do not stop early or truncate - complete the entire statement
+- Missing line items is considered a critical error for statement requests
 
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}"""
+FORMATTING REQUIREMENTS:
+- Use proper markdown table format with | separators
+- Format numbers with commas (e.g., 1,234,567)
+- Include proper headers and currency units
+- Maintain professional presentation while ensuring completeness"""
 
-    CHAIN_OF_THOUGHT_INSTRUCTIONS = """CRITICAL: Follow this structured thinking process internally. Do NOT output the step-by-step reasoning - proceed directly to the final formatted report.
+    # FORMAT INSTRUCTIONS FOR ANALYSIS REQUESTS
+    OUTPUT_FORMAT_ANALYSIS = """Present comprehensive financial analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report.
 
-INTERNAL REASONING PROCESS (do not show to user):
-1. **Context Analysis**: Identify companies, time periods, statement types, currency format, data completeness, calculable ratios
-2. **Report Structure Planning**: Plan executive summary, financial overview, ratio analysis, comparative analysis if needed
-3. **Section Development**: Develop each planned section systematically
-4. **Quality Verification**: Ensure all data sourced from context, proper formatting, correct calculations
-
-IMPORTANT: After completing your internal analysis, present ONLY the final professional financial report WITHOUT showing the reasoning steps."""
-
-    REPORT_STRUCTURE_TEMPLATE = """CRITICAL REPORT STRUCTURE REQUIREMENTS:
-
-MANDATORY: After the Executive Summary, you MUST include this section breakdown before proceeding with the detailed analysis:
+STRUCTURE YOUR ANALYSIS:
+After the Executive Summary, include this section breakdown:
 
 **This report is divided into:**
 
@@ -84,8 +89,6 @@ MANDATORY: After the Executive Summary, you MUST include this section breakdown 
 **Section 3: [Title based on your analysis focus]**
 - [Brief description of what this section will cover]
 
-[Continue with additional sections as needed based on the analysis requirements]
-
 **Key areas to consider including in your sections:**
 - Financial performance metrics and trends
 - Balance sheet health and strength assessment
@@ -96,48 +99,9 @@ MANDATORY: After the Executive Summary, you MUST include this section breakdown 
 - Comparative analysis (if multiple companies)
 - Investment insights and strategic implications
 
-IMPORTANT: You MUST provide this section overview immediately after the Executive Summary. Do not skip this step. Then proceed to write each section with the exact section headers you outlined."""
-
-    ENHANCED_REASONING_FRAMEWORK = """ADVANCED REASONING APPROACH - Use this for complex analysis:
-
-**REASONING PROCESS:**
-1. **Data Comprehension:** First, thoroughly understand what financial data is available
-2. **Pattern Recognition:** Identify trends, anomalies, and relationships in the data
-3. **Hypothesis Formation:** Develop hypotheses about performance drivers and risks
-4. **Evidence Evaluation:** Test hypotheses against the available data
-5. **Conclusion Drawing:** Form evidence-based conclusions and recommendations
-
-**ANALYTICAL THINKING:**
-- **Comparative Analysis:** When comparing companies, identify key differentiators
-- **Trend Analysis:** Look for patterns over time periods
-- **Risk Assessment:** Evaluate both quantitative and qualitative risk factors
-- **Strategic Implications:** Consider what the data means for investment decisions
-
-**QUALITY CHECKS:**
-- **Data Integrity:** Ensure all numbers are accurately extracted from context
-- **Logical Consistency:** Verify that conclusions follow from the data
-- **Professional Standards:** Maintain investment banking level analysis quality
-- **Context Grounding:** All insights must be traceable to provided data"""
-
-    OUTPUT_FORMAT_ANALYSIS = """Present financial data in clean markdown tables WITH comprehensive analysis text. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
-
-{{RATIO_ANALYSIS_GUIDANCE}}
-
-{{REPORT_STRUCTURE_TEMPLATE}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
+Then proceed to write each section with the exact section headers you outlined.
 
 ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all insights and trend analysis strictly on data present in the provided context. NO code blocks."""
-
-    OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS = """Present comprehensive multi-company analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report. 
-
-{{RATIO_ANALYSIS_GUIDANCE}}
-
-{{REPORT_STRUCTURE_TEMPLATE}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
-
-ONLY include banking ratios and metrics that are explicitly available in the retrieved chunks. Base all trend analysis, observations, and strategic implications strictly on data present in the provided context. NO code blocks."""
 
     QUARTERLY_DATA_PRIORITY = """IMPORTANT DATA SOURCE INSTRUCTIONS:
 - PRIORITIZE quarterly chunks over annual chunks when available
@@ -147,24 +111,79 @@ ONLY include banking ratios and metrics that are explicitly available in the ret
 - If you have both quarterly and annual data, use the quarterly chunks for detailed quarterly breakdown"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # STREAMLINED TABLE TEMPLATES
+    # Q4 CALCULATION INSTRUCTIONS
     # ═══════════════════════════════════════════════════════════════════════
     
-    BANKING_TABLE_EXAMPLES = """TABLE FORMATS:
-**Key Metrics:** | Line Item | Current | Previous | YoY Growth |
-**Ratios:** | Ratio | Current | Previous | Trend | Formula |
-**Comparison:** | Bank | Metric1 | Metric2 | Metric3 |"""
+    Q4_CALCULATION_INSTRUCTIONS = """CRITICAL Q4 CALCULATION REQUIREMENT:
+Since you have both quarterly (Q1, Q2, Q3) and annual data, you MUST calculate Q4 figures using:
+**Q4 = Annual - Q3**
 
-    QUARTERLY_TREND_TEMPLATES = """QUARTERLY TABLES:
-**Performance:** | Metric | Q1 | Q2 | Q3 | Q4* | Trend | Growth |
-*Q4 = Annual - Q3 where applicable*"""
+This is correct because Q3 contains 9 months of cumulative data (Jan-Sep), so Q4 represents the final quarter (Oct-Dec).
 
-    COMPARATIVE_ANALYSIS_TEMPLATES = """COMPARISON TABLES:
-**Peer Matrix:** | Bank | Key Metric1 | Key Metric2 | Key Metric3 |
-**Ranking:** | Metric | Best | 2nd Best | Key Insight |"""
+QUARTERLY DATA STRUCTURE:
+- Q1 = 3 months (Jan-Mar)
+- Q2 = 6 months cumulative (Jan-Jun) 
+- Q3 = 9 months cumulative (Jan-Sep)
+- Annual = 12 months (Jan-Dec)
+- Q4 = Annual - Q3 = Oct-Dec (final 3 months)
+
+CALCULATION PROCESS:
+1. Extract Q3 values (9 months cumulative) from quarterly data
+2. Extract Annual values (12 months) from annual data  
+3. Calculate Q4 = Annual - Q3 for each line item
+4. Include Q4 column in your table
+5. Add a note explaining the Q4 calculation method"""
 
     # ═══════════════════════════════════════════════════════════════════════
-    # IMPROVED PARSING PROMPT - Targeted fixes based on test results
+    # SIMPLIFIED PROMPT GENERATION
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    @classmethod
+    def get_prompt_for_intent(cls, intent: str, query: str, companies: List[str], 
+                            is_multi_company: bool, is_quarterly_comparison: bool, 
+                            needs_q4_calculation: bool, financial_statement_scope: str = None) -> str:
+        """Generate appropriate prompt based on intent (statement or analysis)"""
+        
+        scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
+        q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
+        companies_set = set(companies)
+        
+        # Determine if this is a statement request
+        is_statement_request = (intent == "statement" or 
+                              any(stmt_term in query.lower() for stmt_term in [
+                                  "statement", "balance sheet", "profit and loss", "cash flow", 
+                                  "income statement", "financial statement", "p&l", "p & l"
+                              ]))
+
+        # Build the prompt
+        prompt = f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
+
+{cls.FORMATTING_REQUIREMENTS}
+
+{q4_instructions}
+
+{cls.DATA_SOURCE_INSTRUCTIONS}"""
+
+        # Add quarterly priority if needed
+        if is_quarterly_comparison:
+            prompt += f"\n\n{cls.QUARTERLY_DATA_PRIORITY}"
+
+        # Add format instructions based on intent
+        if is_statement_request:
+            prompt += f"\n\n{cls.OUTPUT_FORMAT_STATEMENT}"
+        else:
+            prompt += f"\n\n{cls.RATIO_ANALYSIS_GUIDANCE}\n\n{cls.OUTPUT_FORMAT_ANALYSIS}"
+
+        # Add chunk tracking
+        prompt += f"\n\n{cls.CHUNK_TRACKING_INSTRUCTIONS}"
+
+        # Add context placeholder
+        prompt += "\n\nContext: [chunks]"
+
+        return prompt
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # PARSING PROMPT - Unchanged
     # ═══════════════════════════════════════════════════════════════════════
     
     PARSING_SYSTEM_PROMPT = """You are a PSX Financial Query Parser for Pakistani Stock Exchange data.
@@ -401,343 +420,16 @@ Example (FABL):
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # IMPROVED Q4 CALCULATION
-    # ═══════════════════════════════════════════════════════════════════════
-    
-    Q4_CALCULATION_INSTRUCTIONS = """CRITICAL Q4 CALCULATION REQUIREMENT:
-Since you have both quarterly (Q1, Q2, Q3) and annual data, you MUST calculate Q4 figures using:
-**Q4 = Annual - Q3**
-
-This is correct because Q3 contains 9 months of cumulative data (Jan-Sep), so Q4 represents the final quarter (Oct-Dec).
-
-QUARTERLY DATA STRUCTURE:
-- Q1 = 3 months (Jan-Mar)
-- Q2 = 6 months cumulative (Jan-Jun) 
-- Q3 = 9 months cumulative (Jan-Sep)
-- Annual = 12 months (Jan-Dec)
-- Q4 = Annual - Q3 = Oct-Dec (final 3 months)
-
-CALCULATION PROCESS:
-1. Extract Q3 values (9 months cumulative) from quarterly data
-2. Extract Annual values (12 months) from annual data  
-3. Calculate Q4 = Annual - Q3 for each line item
-4. Include Q4 column in your table
-5. Add a note explaining the Q4 calculation method
-
-EXAMPLE Q4 CALCULATION:
-If Annual Revenue = 1,000,000 and Q3 Revenue (9 months) = 750,000, then Q4 Revenue = 250,000"""
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # RESPONSE GENERATION PROMPTS - Improved with restored guardrails
-    # ═══════════════════════════════════════════════════════════════════════
-
-    @classmethod
-    def get_statement_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
-                           is_quarterly_comparison: bool, needs_q4_calculation: bool, 
-                           financial_statement_scope: str = None) -> str:
-        """Generate improved statement analysis prompt with complete line item capture"""
-        
-        scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
-        q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
-        companies_set = set(companies)
-        
-        # Multi-company quarterly
-        if is_multi_company and any(q_term in query.lower() for q_term in ["quarterly", "quarter", "q1", "q2", "q3", "q4"]):
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.QUARTERLY_DATA_PRIORITY}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{{COMPLETE_LINE_ITEM_EMPHASIS}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
-
-## {', '.join(companies_set)} - Quarterly Analysis ({scope_display})
-
-{cls.QUARTERLY_TREND_TEMPLATES}
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{{OUTPUT_FORMAT_STATEMENT}}
-
-Context: [chunks]"""
-        
-        # Multi-company annual
-        elif is_multi_company:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{{COMPLETE_LINE_ITEM_EMPHASIS}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
-
-## {', '.join(companies_set)} - Financial Analysis ({scope_display})
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{{OUTPUT_FORMAT_STATEMENT}}
-
-Context: [chunks]"""
-        
-        # Single company quarterly
-        elif is_quarterly_comparison:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{{COMPLETE_LINE_ITEM_EMPHASIS}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
-
-## {companies[0] if companies else 'Company'} - Quarterly Analysis ({scope_display})
-
-{cls.QUARTERLY_TREND_TEMPLATES}
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{{OUTPUT_FORMAT_STATEMENT}}
-
-Context: [chunks]"""
-        
-        # Single company
-        else:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{{COMPLETE_LINE_ITEM_EMPHASIS}}
-
-{{CHAIN_OF_THOUGHT_INSTRUCTIONS}}
-
-{cls.CHUNK_TRACKING_INSTRUCTIONS}
-
-{{OUTPUT_FORMAT_STATEMENT}}
-
-Context: [chunks]"""
-
-    @classmethod
-    def get_analysis_prompt(cls, query: str, companies: List[str], is_multi_company: bool, 
-                          is_quarterly_comparison: bool, needs_q4_calculation: bool, 
-                          financial_statement_scope: str = None) -> str:
-        """Generate improved analysis prompt with restored guardrails"""
-        
-        scope_display = "Consolidated" if financial_statement_scope == "consolidated" else "Unconsolidated"
-        q4_instructions = cls.Q4_CALCULATION_INSTRUCTIONS if needs_q4_calculation else ""
-        companies_set = set(companies)
-        
-        if is_quarterly_comparison:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{cls.ENHANCED_REASONING_FRAMEWORK}
-
-## Quarterly Performance Analysis
-
-{cls.QUARTERLY_TREND_TEMPLATES}
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
-
-{cls.OUTPUT_FORMAT_ANALYSIS}
-
-Context: [chunks]"""
-        
-        elif is_multi_company:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-Companies: {', '.join(companies_set)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-{cls.ENHANCED_REASONING_FRAMEWORK}
-
-## Multi-Company Analysis ({scope_display})
-
-{cls.COMPARATIVE_ANALYSIS_TEMPLATES}
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.RATIO_ANALYSIS_GUIDANCE}
-
-{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
-
-{cls.OUTPUT_FORMAT_ANALYSIS}
-
-Context: [chunks]"""
-        
-        else:
-            return f"""{cls.EQUITY_RESEARCH_ANALYST_FRAMING.format(query=query)}
-
-{cls.FORMATTING_REQUIREMENTS}
-
-{q4_instructions}
-
-{cls.DATA_SOURCE_INSTRUCTIONS}
-
-## Financial Analysis
-
-{cls.BANKING_TABLE_EXAMPLES}
-
-{cls.CHAIN_OF_THOUGHT_INSTRUCTIONS}
-
-{cls.OUTPUT_FORMAT_ANALYSIS}
-
-Context: [chunks]"""
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # UTILITY METHODS - Fixed unused parameter and added safe formatting
-    # ═══════════════════════════════════════════════════════════════════════
-    
-    @classmethod
-    def get_prompt_for_intent(cls, intent: str, query: str, companies: List[str], 
-                            is_multi_company: bool, is_quarterly_comparison: bool, 
-                            needs_q4_calculation: bool, financial_statement_scope: str = None) -> str:
-        """Main method to get appropriate improved prompt with restored guardrails"""
-        
-        is_statement_request = (intent == "statement" or 
-                              any(stmt_term in query.lower() for stmt_term in [
-                                  "statement", "balance sheet", "profit and loss", "cash flow", 
-                                  "income statement", "financial statement", "p&l", "p & l"
-                              ]))
-
-        # Helper to recursively format placeholders
-        def recursive_format(s: str) -> str:
-            # Use simple string replacement to avoid format specifier conflicts
-            replacements = {
-                "{RATIO_ANALYSIS_GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE,
-                "{REPORT_STRUCTURE_TEMPLATE}": cls.REPORT_STRUCTURE_TEMPLATE,
-                "{CHAIN_OF_THOUGHT_INSTRUCTIONS}": cls.CHAIN_OF_THOUGHT_INSTRUCTIONS,
-                "{COMPLETE_LINE_ITEM_EMPHASIS}": cls.COMPLETE_LINE_ITEM_EMPHASIS,
-                "{OUTPUT_FORMAT_STATEMENT}": cls.OUTPUT_FORMAT_STATEMENT,
-                "{OUTPUT_FORMAT_ANALYSIS}": cls.OUTPUT_FORMAT_ANALYSIS,
-                "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}": cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS,
-                "{ENHANCED_REASONING_FRAMEWORK}": cls.ENHANCED_REASONING_FRAMEWORK,
-                "{QUARTERLY_TREND_TEMPLATES}": cls.QUARTERLY_TREND_TEMPLATES,
-                "{COMPARATIVE_ANALYSIS_TEMPLATES}": cls.COMPARATIVE_ANALYSIS_TEMPLATES,
-                "{BANKING_TABLE_EXAMPLES}": cls.BANKING_TABLE_EXAMPLES,
-                "{QUARTERLY_DATA_PRIORITY}": cls.QUARTERLY_DATA_PRIORITY,
-                "{BANKING RATIO ANALYSIS GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE
-            }
-            
-            result = s
-            for placeholder, replacement in replacements.items():
-                result = result.replace(placeholder, replacement)
-            return result
-
-        if is_statement_request:
-            prompt = cls.get_statement_prompt(query, companies, is_multi_company, 
-                                          is_quarterly_comparison, needs_q4_calculation, 
-                                          financial_statement_scope)
-        else:
-            prompt = cls.get_analysis_prompt(query, companies, is_multi_company, 
-                                         is_quarterly_comparison, needs_q4_calculation, 
-                                         financial_statement_scope)
-
-        # Replace placeholders
-        prompt = prompt.replace(
-            "{OUTPUT_FORMAT_ANALYSIS}",
-            recursive_format(cls.OUTPUT_FORMAT_ANALYSIS)
-        )
-        prompt = prompt.replace(
-            "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}",
-            recursive_format(cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS)
-        )
-        prompt = prompt.replace(
-            "{OUTPUT_FORMAT_STATEMENT}",
-            recursive_format(cls.OUTPUT_FORMAT_STATEMENT)
-        )
-        prompt = prompt.replace(
-            "{RATIO_ANALYSIS_GUIDANCE}",
-            recursive_format(cls.RATIO_ANALYSIS_GUIDANCE)
-        )
-        prompt = prompt.replace(
-            "{REPORT_STRUCTURE_TEMPLATE}",
-            recursive_format(cls.REPORT_STRUCTURE_TEMPLATE)
-        )
-        prompt = prompt.replace(
-            "{CHAIN_OF_THOUGHT_INSTRUCTIONS}",
-            recursive_format(cls.CHAIN_OF_THOUGHT_INSTRUCTIONS)
-        )
-        prompt = prompt.replace(
-            "{COMPLETE_LINE_ITEM_EMPHASIS}",
-            recursive_format(cls.COMPLETE_LINE_ITEM_EMPHASIS)
-        )
-
-        # Final formatting with placeholder replacement
-        final_replacements = {
-            "{RATIO_ANALYSIS_GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE,
-            "{REPORT_STRUCTURE_TEMPLATE}": cls.REPORT_STRUCTURE_TEMPLATE,
-            "{CHAIN_OF_THOUGHT_INSTRUCTIONS}": cls.CHAIN_OF_THOUGHT_INSTRUCTIONS,
-            "{COMPLETE_LINE_ITEM_EMPHASIS}": cls.COMPLETE_LINE_ITEM_EMPHASIS,
-            "{OUTPUT_FORMAT_STATEMENT}": cls.OUTPUT_FORMAT_STATEMENT,
-            "{OUTPUT_FORMAT_ANALYSIS}": cls.OUTPUT_FORMAT_ANALYSIS,
-            "{OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS}": cls.OUTPUT_FORMAT_MULTI_COMPANY_ANALYSIS,
-            "{ENHANCED_REASONING_FRAMEWORK}": cls.ENHANCED_REASONING_FRAMEWORK,
-            "{QUARTERLY_TREND_TEMPLATES}": cls.QUARTERLY_TREND_TEMPLATES,
-            "{COMPARATIVE_ANALYSIS_TEMPLATES}": cls.COMPARATIVE_ANALYSIS_TEMPLATES,
-            "{BANKING_TABLE_EXAMPLES}": cls.BANKING_TABLE_EXAMPLES,
-            "{QUARTERLY_DATA_PRIORITY}": cls.QUARTERLY_DATA_PRIORITY,
-            "{BANKING RATIO ANALYSIS GUIDANCE}": cls.RATIO_ANALYSIS_GUIDANCE
-        }
-        
-        for placeholder, replacement in final_replacements.items():
-            prompt = prompt.replace(placeholder, replacement)
-        
-        return prompt
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # QUARTERLY ENHANCEMENT INSTRUCTIONS - For Query Planning
-    # ═══════════════════════════════════════════════════════════════════════
-    
-    QUARTERLY_ENHANCEMENT_INSTRUCTIONS = """IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for Q4 calculation:
-- Add quarterly queries for Q1, Q2, Q3 data using predefined period sets
-- Add annual queries for the same companies and statement types
-- The annual data will be used to calculate Q4 = Annual - Q3
-- Period set efficiency: Each period set provides current + comparative data"""
-
     @classmethod
     def get_parsing_user_prompt(cls, user_query: str, bank_tickers: List[str], 
                               is_quarterly_request: bool) -> str:
-        """Generate improved user prompt for Claude parsing"""
+        """Generate user prompt for Claude parsing"""
         
-        quarterly_instruction = cls.QUARTERLY_ENHANCEMENT_INSTRUCTIONS if is_quarterly_request else ""
+        quarterly_instruction = """IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for Q4 calculation:
+- Add quarterly queries for Q1, Q2, Q3 data using predefined period sets
+- Add annual queries for the same companies and statement types
+- The annual data will be used to calculate Q4 = Annual - Q3
+- Period set efficiency: Each period set provides current + comparative data""" if is_quarterly_request else ""
         
         return f"""Query: "{user_query}"
 
@@ -747,17 +439,8 @@ Available bank tickers: {bank_tickers}
 
 Create QueryPlan following system parsing rules."""
 
-    COMPLETE_LINE_ITEM_EMPHASIS = """CRITICAL FOR STATEMENT REQUESTS - COMPLETE LINE ITEM CAPTURE:
-- When intent is "statement", you MUST include ALL line items found in the financial statements
-- Do NOT summarize or omit any line items - include every single line from the original statement
-- For cash flow statements: Include ALL operating, investing, and financing activities line by line
-- For profit & loss: Include ALL revenue, expense, and profit line items
-- For balance sheets: Include ALL asset, liability, and equity line items
-- If space is limited, prioritize completeness over formatting - include every line item available
-- Missing line items is considered a critical error for statement requests"""
-
 # ═══════════════════════════════════════════════════════════════════════
-# CONVENIENCE INSTANCE FOR EASY IMPORTING - Dual alias for compatibility
+# CONVENIENCE INSTANCE FOR EASY IMPORTING
 # ═══════════════════════════════════════════════════════════════════════
 
-prompts = OptimizedPromptLibrary()
+prompts = SimplifiedPromptLibrary()
