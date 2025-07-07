@@ -61,7 +61,7 @@ anthropic_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY, timeout=6
 
 # Google GenAI for streaming responses (proven working configuration)
 from llama_index.llms.google_genai import GoogleGenAI
-streaming_llm = GoogleGenAI(model="models/gemini-2.5-flash-lite-preview-06-17", api_key=GEMINI_API_KEY, temperature=0.3)
+streaming_llm = GoogleGenAI(model="models/gemini-2.5-flash", api_key=GEMINI_API_KEY, temperature=0.3)
 
 # Import prompts library
 from prompts import prompts

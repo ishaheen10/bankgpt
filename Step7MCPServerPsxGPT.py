@@ -57,7 +57,7 @@ class EnhancedResourceManager:
             log.info("✅ Embedding model loaded successfully")
             
             log.info("🤖 Loading Google Gemini LLM (2.5 Flash)...")
-            self.llm = GoogleGenAI(model="models/gemini-2.5-flash-lite-preview-06-17", api_key=GEMINI_API_KEY, temperature=0.3)
+            self.llm = GoogleGenAI(model="models/gemini-2.5-flash", api_key=GEMINI_API_KEY, temperature=0.3)
             log.info("✅ LLM loaded successfully")
             
             log.info("🗂️ Loading vector index from storage...")
