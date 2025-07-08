@@ -242,8 +242,7 @@ PERIOD FORMAT STANDARDIZATION:
 - Annual: ["2024", "2023"] (always include previous year)
 - Quarterly: ["Q1-2024", "Q1-2023"] (always include previous year)
 - Multiple quarters: Separate queries per period SET (not individual quarters)
-- Cross-period: Separate queries per period set
-- For "last N quarters": Identify which period sets cover those quarters
+- For "last N quarters": Generate ONLY quarterly period sets (client will add annual for Q4)
 
 SEARCH QUERY: "[COMPANY] [STATEMENT_TYPE/ANALYSIS_TYPE] [PERIOD]"
 
@@ -353,26 +352,25 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 *LAST N QUARTERS PATTERNS*
 
 "HBL last 3 quarters balance sheet"
-→ Creates: 3 queries (3 period sets):
-1  "HBL balance sheet Q1 2025"
-    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
-2  "HBL balance sheet Q3 2024"
-    {is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
-3  "HBL balance sheet 2024"
-    {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}   # used to derive Q4
-→ intent = "statement"
-
-"HBL last 6 quarters balance sheet"
-→ Creates: 4 queries (4 period sets):
+→ Creates: 3 queries (ONLY quarterly - client adds annual):
 1  "HBL balance sheet Q1 2025"
     {is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
 2  "HBL balance sheet Q3 2024"
     {is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
 3  "HBL balance sheet Q2 2024"
     {is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
-4  "HBL balance sheet 2024"
-    {is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
-→ Last 6 quarters: Q1 2025, Q4 2024, Q3 2024, Q2 2024, Q1 2024, Q4 2023
+→ intent = "statement"
+
+"UBL profit and loss for last 4 quarters with notes breakdown"
+→ Creates: 4 queries (ONLY quarterly - client adds annual + notes):
+1  "UBL profit and loss Q1 2025"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2025","Q1-2024"]}
+2  "UBL profit and loss Q3 2024"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q3-2024","Q3-2023"]}
+3  "UBL profit and loss Q2 2024"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q2-2024","Q2-2023"]}
+4  "UBL profit and loss Q1 2024"
+    {ticker:"UBL", statement_type:"profit_and_loss", is_statement:"yes", filing_type:"quarterly", filing_period:["Q1-2024","Q1-2023"]}
 → intent = "statement"
 
 "FABL, BIPL and MEBL last 4 quarters analysis"
@@ -425,11 +423,7 @@ OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""
                               is_quarterly_request: bool) -> str:
         """Generate user prompt for Claude parsing"""
         
-        quarterly_instruction = """IMPORTANT: For quarterly requests, include BOTH quarterly AND annual queries for Q4 calculation:
-- Add quarterly queries for Q1, Q2, Q3 data using predefined period sets
-- Add annual queries for the same companies and statement types
-- The annual data will be used to calculate Q4 = Annual - Q3
-- Period set efficiency: Each period set provides current + comparative data""" if is_quarterly_request else ""
+        quarterly_instruction = """IMPORTANT: For quarterly requests, generate ONLY quarterly queries - client will automatically add annual queries for Q4 calculation.""" if is_quarterly_request else ""
         
         return f"""Query: "{user_query}"
 
