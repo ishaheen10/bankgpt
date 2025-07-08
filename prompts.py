@@ -75,6 +75,14 @@ FORMATTING REQUIREMENTS:
     # FORMAT INSTRUCTIONS FOR ANALYSIS REQUESTS
     OUTPUT_FORMAT_ANALYSIS = """Present comprehensive financial analysis with supporting data tables and detailed insights in clean markdown format. Use a combination of tables, bullet points, and paragraphs the way a top-tier investment banking analyst would prepare a high-quality equity research report.
 
+CRITICAL: FOCUS ON NON-OBVIOUS INSIGHTS
+- Go beyond surface-level analysis and obvious patterns
+- Identify hidden correlations, unexpected trends, and counterintuitive findings
+- Look for insights that aren't immediately apparent from raw numbers
+- Connect disparate data points to reveal deeper strategic implications
+- Challenge conventional assumptions and highlight surprising discoveries
+- Provide "aha moments" that demonstrate sophisticated analytical thinking
+
 STRUCTURE YOUR ANALYSIS:
 After the Executive Summary, include this section breakdown:
 
@@ -98,6 +106,14 @@ After the Executive Summary, include this section breakdown:
 - Risk assessment and capital adequacy
 - Comparative analysis (if multiple companies)
 - Investment insights and strategic implications
+
+INSIGHT GENERATION APPROACH:
+- Look for patterns across time periods that reveal strategic shifts
+- Identify outliers and anomalies that suggest underlying business changes
+- Compare ratios and metrics to uncover efficiency gaps or competitive advantages
+- Analyze the relationship between different financial metrics to find non-linear correlations
+- Consider what the data reveals about management decisions and strategic direction
+- Highlight counterintuitive findings that challenge market assumptions
 
 Then proceed to write each section with the exact section headers you outlined.
 
@@ -253,6 +269,16 @@ STANDARD EXAMPLES (intent = "analysis" unless noted)
 - Multiple statements: separate query per statement type  
 - Multiple periods: separate query per period SET (not individual periods)
 - Total queries = companies × statements × period_sets
+
+*BROAD METRIC ANALYSIS RECOGNITION:*
+- When query asks for specific metric comparison (e.g., "deposits per branch", "branch efficiency", "cost per employee")
+- Without explicit statement type requests (no "balance sheet", "profit and loss", "cash flow")
+- For multiple companies: Use companies × varied_search_terms × varied_time_periods pattern
+- DO NOT separate by statement_type - focus on semantic variety
+- VARY SEARCH TERMS: Use related concepts (e.g., "number of branches", "branch growth", "deposits")
+- VARY TIME PERIODS: Use different filing_period filters (["2024","2023"], ["2023","2022"], ["2022","2021"])
+- LEVERAGE BOTH semantic search (diverse terms) AND metadata filtering (time periods)
+- Avoid repetitive search queries that only change the year
 
 *HISTORICAL STATEMENT HANDLING*
 - "last N years" for single company + single statement = STATEMENT intent, single query with appropriate period set
@@ -414,6 +440,101 @@ Note query: {ticker:"UBL", note_link:"profit_and_loss", is_statement:"no", is_no
 Example (FABL):
 • Statement query: {ticker:"FABL", statement_type:"balance_sheet", is_statement:"yes", filing_type:"annual", filing_period:["2024","2023"]}
 • Exposure query: {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}  
+→ intent = "analysis"
+
+"financial ratios analysis for FABL and MEBL"
+→ Creates: 6 queries (2 companies × 3 varied search terms + time periods)
+1  "FABL capital adequacy ratio"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}
+2  "FABL liquidity ratios"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2023","2022"]}
+3  "FABL profitability metrics"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2022","2021"]}
+4  "MEBL capital adequacy ratio"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2024","2023"]}
+5  "MEBL liquidity ratios"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2023","2022"]}
+6  "MEBL profitability metrics"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2022","2021"]}
+→ intent = "analysis"
+
+*BROAD METRIC ANALYSIS PATTERNS (NO STATEMENT TYPE SEPARATION)*
+
+"deposits per branch comparison for FABL, BIPL and MEBL"
+→ Creates: 9 queries (3 companies × 3 varied search terms + time periods)
+→ No statement_type separation, vary both search terms AND time periods:
+1  "FABL number of branches"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}
+2  "FABL branch growth"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2023","2022"]}
+3  "FABL deposits"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2022","2021"]}
+4  "BIPL number of branches"
+    {ticker:"BIPL", filing_type:"annual", filing_period:["2024","2023"]}
+5  "BIPL branch growth"
+    {ticker:"BIPL", filing_type:"annual", filing_period:["2023","2022"]}
+6  "BIPL deposits"
+    {ticker:"BIPL", filing_type:"annual", filing_period:["2022","2021"]}
+7  "MEBL number of branches"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2024","2023"]}
+8  "MEBL branch growth"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2023","2022"]}
+9  "MEBL deposits"
+    {ticker:"MEBL", filing_type:"annual", filing_period:["2022","2021"]}
+→ intent = "analysis"
+
+"branch efficiency analysis for HBL and UBL"
+→ Creates: 6 queries (2 companies × 3 varied search terms + time periods)
+1  "HBL branch efficiency"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2024","2023"]}
+2  "HBL cost per branch"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2023","2022"]}
+3  "HBL branch productivity"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2022","2021"]}
+4  "UBL branch efficiency"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2024","2023"]}
+5  "UBL cost per branch"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2023","2022"]}
+6  "UBL branch productivity"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2022","2021"]}
+→ intent = "analysis"
+
+"profitability comparison for MCB and FABL"
+→ Creates: 6 queries (2 companies × 3 varied search terms + time periods)
+1  "MCB return on assets"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2024","2023"]}
+2  "MCB net interest margin"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2023","2022"]}
+3  "MCB profitability ratios"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2022","2021"]}
+4  "FABL return on assets"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2024","2023"]}
+5  "FABL net interest margin"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2023","2022"]}
+6  "FABL profitability ratios"
+    {ticker:"FABL", filing_type:"annual", filing_period:["2022","2021"]}
+→ intent = "analysis"
+
+"cost analysis for HBL, UBL and MCB"
+→ Creates: 9 queries (3 companies × 3 varied search terms + time periods)
+1  "HBL operating expenses"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2024","2023"]}
+2  "HBL cost to income ratio"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2023","2022"]}
+3  "HBL administrative expenses"
+    {ticker:"HBL", filing_type:"annual", filing_period:["2022","2021"]}
+4  "UBL operating expenses"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2024","2023"]}
+5  "UBL cost to income ratio"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2023","2022"]}
+6  "UBL administrative expenses"
+    {ticker:"UBL", filing_type:"annual", filing_period:["2022","2021"]}
+7  "MCB operating expenses"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2024","2023"]}
+8  "MCB cost to income ratio"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2023","2022"]}
+9  "MCB administrative expenses"
+    {ticker:"MCB", filing_type:"annual", filing_period:["2022","2021"]}
 → intent = "analysis"
 
 OUTPUT: QueryPlan JSON with companies[], intent, queries[], confidence"""

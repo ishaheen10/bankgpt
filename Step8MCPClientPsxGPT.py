@@ -62,9 +62,9 @@ anthropic_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY, timeout=6
 # Google GenAI for streaming responses (uses maximum token limits by default)
 from llama_index.llms.google_genai import GoogleGenAI
 streaming_llm = GoogleGenAI(
-    model="models/gemini-2.5-flash", 
+    model="models/gemini-2.5-pro", 
     api_key=GEMINI_API_KEY, 
-    temperature=0.3,
+    temperature=0.4,
     timeout=120.0
 )
 
