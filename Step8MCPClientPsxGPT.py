@@ -856,14 +856,11 @@ async def stream_formatted_response(query: str, nodes: List[Dict], intent: str, 
         yield str(response)
 
 # ─────────────────────────── Chainlit UI ────────────────────────────────
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+# Import simple authentication
+from simple_auth import simple_auth_callback
 
-@cl.password_auth_callback
-def auth_callback(username: str, password: str) -> Optional[cl.User]:
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-        return cl.User(identifier=username, metadata={"role": "admin"})
-    return None
+# Use simple authentication for database users
+auth_callback = simple_auth_callback
 
 @cl.on_chat_start
 async def welcome_message():
