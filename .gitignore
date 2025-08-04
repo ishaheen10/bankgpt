@@ -54,3 +54,4 @@ psx_bank_markdown/
 # Temporary files
 *.tmp
 *.temp
+\n# Secrets\n.env
